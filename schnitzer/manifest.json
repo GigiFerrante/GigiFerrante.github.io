@@ -1,0 +1,15 @@
+{
+  "name": "Logistica Schnitzer Pro",
+  "short_name": "Schnitzer",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3498db",
+  "icons": [
+    {
+      "src": "https://scontent.fmxp8-1.fna.fbcdn.net/v/t1.6435-1/158884415_1795042067320460_6369544690392993830_n.jpg?stp=dst-jpg_s480x480_tt6&_nc_cat=108&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=Whs0OM9R1qAQ7kNvwHZRQ8X&_nc_oc=Adk8JWVz8yAXj9e7OYJ1zROBuX3iFjlXZwvEOMvGmsZEURyI9JDL-6Lfd5AUjRCrgIE&_nc_zt=24&_nc_ht=scontent.fmxp8-1.fna&_nc_gid=NpOYCXVIp3xwFkAg9K8-OA&oh=00_AfrMScoU9GyJ32Q-JTkWOO5H3JIJEzTn-BRVbNF33sWJfg&oe=698C9A6B",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

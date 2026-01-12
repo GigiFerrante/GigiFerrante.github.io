@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>LogisticApp Mobile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --bottom-bar-height: 80px;
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding-bottom: var(--bottom-bar-height); /* Spazio per la barra inferiore */
+            overscroll-behavior-y: none; /* Evita il rimbalzo su iOS */
+        }
+
+        /* Gestione Schermate */
+        .screen { display: none; padding: 15px; padding-bottom: 100px; animation: fadeIn 0.2s; }
+        .active-screen { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Dashboard Buttons */
+        .dash-btn {
+            border: none;
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+        .dash-btn:active { transform: scale(0.98); }
+        .dash-btn i { font-size: 1.8rem; margin-right: 15px; vertical-align: middle; }
+        .dash-btn span { font-size: 1.2rem; font-weight: 600; vertical-align: middle; }
+        
+        .btn-xl { padding: 40px 20px; background: linear-gradient(135deg, #198754 0%, #20c997 100%); color: white; }
+        .btn-blue { background: white; color: var(--primary-color); border-left: 6px solid var(--primary-color); }
+        .btn-orange { background: white; color: #fd7e14; border-left: 6px solid #fd7e14; }
+
+        /* Card Prodotto Ottimizzata */
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            border: 1px solid #e9ecef;
+        }
+        .prod-title { font-weight: 700; font-size: 1.05rem; color: #212529; line-height: 1.2; }
+        .prod-code { color: #6c757d; font-size: 0.85rem; margin-top: 4px; }
+        .prod-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; background: #e9ecef; color: #495057; }
+
+        /* Stepper (+ / -) */
+        .stepper {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 4px;
+            margin-top: 10px;
+        }
+        .stepper-btn {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stepper-btn:active { background: #e2e6ea; }
+        .stepper-input {
+            flex: 1;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #212529;
+            width: 50px; /* Force width */
+        }
+        /* Rimuove frecce input number */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* Bottom Action Bar (Sticky) */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: var(--bottom-bar-height);
+            background: white;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            z-index: 1000;
+        }
+        .bar-btn {
+            height: 50px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Search Header Sticky */
+        .search-header {
+            position: sticky; top: 0; z-index: 900;
+            background: rgba(240, 242, 245, 0.95);
+            backdrop-filter: blur(5px);
+            padding: 10px 15px;
+            margin: -15px -15px 15px -15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .search-input {
+            border-radius: 30px;
+            padding: 12px 20px;
+            border: 1px solid #ced4da;
+            box-shadow: none;
+        }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 30px;
+            padding: 12px;
+            position: fixed;
+            z-index: 2000;
+            left: 50%;
+            bottom: 90px;
+            transform: translateX(-50%);
+            font-size: 15px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 100px; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Messaggio</div>
+
+    <div id="screen-login" class="screen active-screen">
+        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 90vh;">
+            <div class="mb-4 text-primary"><i class="fas fa-cube fa-4x"></i></div>
+            <h3 class="fw-bold mb-4">Logistica Mobile</h3>
+            <div class="card p-4 border-0 shadow-sm w-100" style="max-width: 350px; border-radius: 20px;">
+                <div class="mb-3">
+                    <input type="text" class="form-control form-control-lg bg-light border-0" placeholder="Utente" id="login-user" value="admin">
+                </div>
+                <div class="mb-4">
+                    <input type="password" class="form-control form-control-lg bg-light border-0" placeholder="Password" id="login-pass" value="admin">
+                </div>
+                <button onclick="app.login()" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold">ENTRA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-dashboard" class="screen">
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+            <h4 class="fw-bold m-0">Menu</h4>
+            <button onclick="app.logout()" class="btn btn-light btn-sm rounded-circle shadow-sm" style="width: 40px; height: 40px;"><i class="fas fa-power-off text-danger"></i></button>
+        </div>
+        
+        <button onclick="app.startNewDDT()" class="dash-btn btn-xl mb-4">
+            <i class="fas fa-plus-circle"></i> <span>NUOVO DDT</span>
+        </button>
+
+        <button onclick="app.nav('screen-carico')" class="dash-btn btn-blue">
+            <i class="fas fa-box-open"></i> <span>Carico Magazzino</span>
+        </button>
+        
+        <button onclick="app.loadDDTList()" class="dash-btn btn-orange">
+            <i class="fas fa-clipboard-list"></i> <span>Storico & Stampa</span>
+        </button>
+    </div>
+
+    <div id="screen-carico" class="screen">
+        <div class="search-header d-flex align-items-center justify-content-between">
+            <h5 class="m-0 fw-bold">Carico</h5>
+            <input type="date" id="carico-date" class="form-control form-control-sm w-auto border-0 bg-transparent fw-bold text-end">
+        </div>
+
+        <div id="carico-list-container">
+            </div>
+
+        <div class="bottom-bar">
+            <div class="row w-100 g-2">
+                <div class="col-4">
+                    <button onclick="app.nav('screen-dashboard')" class="btn btn-light w-100 bar-btn text-muted">Indietro</button>
+                </div>
+                <div class="col-8">
+                    <button onclick="app.saveCarico()" class="btn btn-primary w-100 bar-btn shadow" id="btn-save-carico">
+                        SALVA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-ddt-new" class="screen">
+        <div class="search-header">
+            <div class="mb-2">
+                <select id="ddt-client-select" class="form-select form-select-lg border-0 bg-white shadow-sm fw-bold">
+                    <option value="">Seleziona Cliente...</option>
+                </select>
+            </div>
+            <div class="position-relative">
+                <i class="fas fa-search position-absolute text-muted" style="left: 15px; top: 14px;"></i>
+                <input type="text" id="ddt-search" class="form-control search-input ps-5" placeholder="Cerca veloce..." onkeyup="app.filterProducts('ddt')">
+                <i class="fas fa-times-circle position-absolute text-muted" style="right: 15px; top: 14px;" onclick="app.clearSearch()"></i>
+            </div>
+        </div>
+
+        <div id="ddt-list-container">
+            </div>
+
+        <div class="bottom-bar">
+            <div class="row w-100 g-2">
+                <div class="col-4">
+                    <button onclick="app.nav('screen-dashboard')" class="btn btn-light w-100 bar-btn text-muted">Annulla</button>
+                </div>
+                <div class="col-8">
+                    <button onclick="app.saveLocalDDT()" class="btn btn-success w-100 bar-btn shadow" id="btn-save-ddt">
+                        CONFERMA (0)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-ddt-list" class="screen">
+        <div class="search-header">
+            <h5 class="m-0 fw-bold">Storico Documenti</h5>
+        </div>
+        <div id="saved-ddts-container"></div>
+        
+        <div class="bottom-bar justify-content-center">
+             <button onclick="app.nav('screen-dashboard')" class="btn btn-outline-secondary w-100 bar-btn" style="max-width: 200px;">Torna al Menu</button>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            data: { products: [], clients: [], ddts: [] },
+            
+            init: function() {
+                this.loadExternalFiles();
+                const storedDDTs = localStorage.getItem('local_ddts');
+                if(storedDDTs) this.data.ddts = JSON.parse(storedDDTs);
+                
+                const dInput = document.getElementById('carico-date');
+                if(dInput) dInput.valueAsDate = new Date();
+            },
+
+            loadExternalFiles: function() {
+                fetch('ANAPC00F_20260112 prodotti - Copia.csv').then(r => r.ok ? r.text() : Promise.reject())
+                    .then(t => { this.parseProducts(t); console.log("i prodotti sono ", this.data.products.length); this.renderCarico(); })
+                    .catch(() => this.showToast("Errore loading prodotti.csv (Serve WebServer)"));
+
+                fetch('anagrafiche_00.csv').then(r => r.ok ? r.text() : Promise.reject())
+                    .then(t => { console.log("i clienti sono ", this.data.clients.length); this.parseClients(t) })
+                    .catch(() => this.showToast("Errore loading anagrafica.csv"));
+            },
+
+            parseProducts: function(csv) {
+                this.data.products = csv.split('\n').filter(r => r.trim() !== '').slice(2).map(row => {
+                    const c = row.split('|');
+                    if (c.length < 5) return null;
+                    // Mappa CSV: BRAND|UNIT|CODE|NAME|DESC|ORIGIN|PRICE|...
+                    return { brand: c[0], unit: c[1], code: c[2], name: c[3], origin: c[5], price: c[6] };
+                }).filter(i => i);
+            },
+
+            parseClients: function(csv) {
+                this.data.clients = csv.split('\n').filter(r => r.trim() !== '').slice(1).map(row => {
+                    const c = row.split('|');
+                    if (c.length < 5) return null;
+                    return { code: c[0], name: c[3], address: c[5], city: c[6] };
+                }).filter(i => i);
+            },
+
+            nav: function(screenId) {
+                document.querySelectorAll('.screen').forEach(el => el.classList.remove('active-screen'));
+                document.getElementById(screenId).classList.add('active-screen');
+                window.scrollTo(0,0);
+            },
+
+            login: function() { this.nav('screen-dashboard'); },
+            logout: function() { this.nav('screen-login'); },
+
+            // --- CARICO (Con Stepper UI) ---
+            renderCarico: function() {
+                const c = document.getElementById('carico-list-container');
+                c.innerHTML = '';
+                this.data.products.forEach((p, idx) => {
+                    c.innerHTML += `
+                    <div class="product-card">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="prod-title">${p.name}</div>
+                                <div class="prod-code">${p.code} - ${p.brand}</div>
+                            </div>
+                            <span class="prod-badge h-100">${p.unit}</span>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <small class="text-muted">Colli</small>
+                                <div class="stepper">
+                                    <button class="stepper-btn" onclick="app.step(this, -1)">-</button>
+                                    <input type="number" class="stepper-input input-colli" data-idx="${idx}" value="" placeholder="0">
+                                    <button class="stepper-btn" onclick="app.step(this, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Q.tà</small>
+                                <div class="stepper">
+                                    <button class="stepper-btn" onclick="app.step(this, -1)">-</button>
+                                    <input type="number" class="stepper-input input-qty" data-idx="${idx}" value="" placeholder="0">
+                                    <button class="stepper-btn" onclick="app.step(this, 1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            },
+
+            // --- DDT (Con Stepper e Prezzo) ---
+            startNewDDT: function() {
+                const s = document.getElementById('ddt-client-select');
+                s.innerHTML = '<option value="">Seleziona Cliente...</option>';
+                this.data.clients.forEach((c, i) => s.innerHTML += `<option value="${i}">${c.name}</option>`);
+                this.renderDDTProducts();
+                this.updateTotalButton();
+                this.nav('screen-ddt-new');
+            },
+
+            renderDDTProducts: function(filter = '') {
+                const c = document.getElementById('ddt-list-container');
+                c.innerHTML = '';
+                const search = filter.toLowerCase();
+                let count = 0;
+
+                this.data.products.forEach((p, idx) => {
+                    if(search && !p.name.toLowerCase().includes(search) && !p.code.includes(search)) return;
+                    if(count > 50 && !search) return; // Lazy render per performance se lista lunga senza filtro
+                    
+                    c.innerHTML += `
+                    <div class="product-card">
+                        <div class="prod-title">${p.name}</div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="prod-code">€ <input type="number" class="border-0 bg-transparent fw-bold text-primary input-ddt-price" style="width:70px" value="${p.price}" data-idx="${idx}"></span>
+                            <span class="prod-badge">${p.code}</span>
+                        </div>
+                        <div class="mt-2">
+                            <div class="stepper" style="background:#e8f5e9">
+                                <button class="stepper-btn text-success" onclick="app.step(this, -1, true)">-</button>
+                                <input type="number" class="stepper-input input-ddt-qty text-success" data-idx="${idx}" value="" placeholder="0" readonly>
+                                <button class="stepper-btn text-success" onclick="app.step(this, 1, true)">+</button>
+                            </div>
+                        </div>
+                    </div>`;
+                    count++;
+                });
+            },
+
+            // --- LOGICA STEPPER E UX ---
+            step: function(btn, val, isDDT = false) {
+                const input = btn.parentElement.querySelector('input');
+                let current = parseInt(input.value) || 0;
+                current += val;
+                if(current < 0) current = 0;
+                input.value = current === 0 ? '' : current;
+                
+                if(isDDT) this.updateTotalButton();
+            },
+
+            updateTotalButton: function() {
+                let count = 0;
+                document.querySelectorAll('.input-ddt-qty').forEach(i => {
+                    if(i.value > 0) count++;
+                });
+                const btn = document.getElementById('btn-save-ddt');
+                btn.innerHTML = count > 0 ? `CONFERMA (${count} ARTICOLI)` : `CONFERMA (0)`;
+                btn.className = count > 0 ? "btn btn-success w-100 bar-btn shadow" : "btn btn-secondary w-100 bar-btn shadow";
+            },
+
+            filterProducts: function(ctx) {
+                if(ctx === 'ddt') this.renderDDTProducts(document.getElementById('ddt-search').value);
+            },
+            
+            clearSearch: function() {
+                document.getElementById('ddt-search').value = '';
+                this.renderDDTProducts();
+            },
+
+            // --- SALVATAGGIO ---
+            saveCarico: function() {
+                let lines = [], zpl = "^XA^FO50,50^ADN,36,20^FDCarico^FS";
+                let y = 100, hasData = false;
+                
+                document.querySelectorAll('#carico-list-container .product-card').forEach(card => {
+                    const colli = card.querySelector('.input-colli').value;
+                    const qty = card.querySelector('.input-qty').value;
+                    const idx = card.querySelector('.input-colli').dataset.idx;
+                    const p = this.data.products[idx];
+
+                    if(colli || qty) {
+                        hasData = true;
+                        lines.push(`${document.getElementById('carico-date').value}|${p.code}|${qty}|${colli}`);
+                        zpl += `^FO50,${y}^ADN,18,10^FD${p.name} Q:${qty} C:${colli}^FS`;
+                        y += 30;
+                    }
+                });
+                zpl += "^XZ";
+
+                if(!hasData) return this.showToast("Inserisci almeno un dato!");
+                
+                this.download("carico.csv", lines.join('\n'));
+                this.download("print.zpl", zpl);
+                this.showToast("Carico salvato!");
+                this.nav('screen-dashboard');
+            },
+
+            saveLocalDDT: function() {
+                const cIdx = document.getElementById('ddt-client-select').value;
+                if(!cIdx) return this.showToast("Seleziona un cliente!");
+
+                let items = [];
+                document.querySelectorAll('#ddt-list-container .product-card').forEach(card => {
+                    const q = card.querySelector('.input-ddt-qty').value;
+                    const p = card.querySelector('.input-ddt-price').value;
+                    const idx = card.querySelector('.input-ddt-qty').dataset.idx;
+                    
+                    if(q > 0) items.push({ product: this.data.products[idx], qty: q, price: p });
+                });
+
+                if(items.length === 0) return this.showToast("Carrello vuoto!");
+
+                this.data.ddts.push({
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    client: this.data.clients[cIdx],
+                    items: items,
+                    printed: false
+                });
+                localStorage.setItem('local_ddts', JSON.stringify(this.data.ddts));
+                this.showToast("DDT Salvato in bozza");
+                this.nav('screen-dashboard');
+            },
+
+            // --- VISUALIZZAZIONE LISTA ---
+            loadDDTList: function() {
+                const c = document.getElementById('saved-ddts-container');
+                c.innerHTML = '';
+                const list = this.data.ddts.sort((a,b) => b.id - a.id);
+                if(list.length === 0) c.innerHTML = '<div class="text-center text-muted mt-5"><i class="fas fa-ghost fa-2x"></i><br>Nessun DDT</div>';
+
+                list.forEach(d => {
+                    const bg = d.printed ? 'bg-light' : 'border-success';
+                    const icon = d.printed ? '<i class="fas fa-lock text-muted"></i>' : '<i class="fas fa-pen text-success"></i>';
+                    
+                    // Solo pulsante stampa se non stampato
+                    const printBtn = !d.printed ? 
+                        `<button class="btn btn-dark btn-sm rounded-pill px-3" onclick="app.printZebra(${d.id})"><i class="fas fa-print"></i> Stampa</button>` : 
+                        '<span class="badge bg-secondary">Stampato</span>';
+
+                    c.innerHTML += `
+                    <div class="card mb-3 ${bg} shadow-sm border-0">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <small class="text-muted fw-bold">#${d.id.toString().slice(-4)}</small>
+                                ${icon}
+                            </div>
+                            <h6 class="card-title fw-bold mb-1">${d.client.name}</h6>
+                            <p class="small text-muted mb-3">${d.client.city} • ${d.items.length} Articoli</p>
+                            <div class="d-flex justify-content-end gap-2">
+                                ${printBtn}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                this.nav('screen-ddt-list');
+            },
+
+            printZebra: function(id) {
+                if(!confirm("Stampare e chiudere il documento?")) return;
+                const idx = this.data.ddts.findIndex(d => d.id === id);
+                const d = this.data.ddts[idx];
+                
+                let zpl = `^XA^FO50,50^ADN,36,20^FDDDT ${d.id}^FS^FO50,100^ADN,18,10^FD${d.client.name}^FS`;
+                let y = 150;
+                d.items.forEach(i => { zpl += `^FO50,${y}^ADN,18,10^FD${i.product.name} (${i.qty})^FS`; y+=30; });
+                zpl += "^XZ";
+
+                this.download(`DDT_${d.id}.zpl`, zpl);
+                this.data.ddts[idx].printed = true;
+                localStorage.setItem('local_ddts', JSON.stringify(this.data.ddts));
+                this.loadDDTList();
+            },
+
+            // --- UTILS ---
+            showToast: function(msg) {
+                const t = document.getElementById("toast");
+                t.textContent = msg;
+                t.className = "show";
+                setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+            },
+
+            download: function(name, text) {
+                const el = document.createElement('a');
+                el.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+                el.download = name;
+                document.body.appendChild(el); el.click(); document.body.removeChild(el);
+            }
+        };
+
+        window.addEventListener('load', () => app.init());
+    </script>
+</body>
+</html>
