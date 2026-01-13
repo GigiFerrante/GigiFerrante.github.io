@@ -191,6 +191,11 @@
             document.querySelectorAll('.page, #login-screen, #dashboard').forEach(p => p.classList.add('hidden'));
             const target = document.getElementById(id);
             if(target) target.classList.remove('hidden');
+            // MODIFICA: Pulizia ricerca al cambio pagina
+            if(id === 'page-editor') {
+                document.getElementById('art-search').value = '';
+                filterArticoli();
+            }
             if(id === 'page-modifica') renderListaModifica();
         }
 
@@ -255,6 +260,10 @@
         }
 
         function salvaInLocale() {
+            const clienteId = document.getElementById('cliente-select').value;
+            // MODIFICA: Controllo obbligatorietà cliente
+            if(currentType === 'DDT' && !clienteId) return alert("ERRORE: Seleziona un cliente!");
+            
             const items = [];
             document.querySelectorAll('.list-item').forEach(el => {
                 const qta = el.querySelector('.qta-in').value;
@@ -313,6 +322,10 @@
             if(doc.tipo === 'DDT') {
                 renderAnagrafiche();
                 document.getElementById('cliente-select').value = doc.clienteId;
+                document.getElementById('cliente-select').disabled = true;
+            }else {
+                document.getElementById('cliente-select').disabled = false;
+                document.getElementById('cliente-select').value = '';
             }
             renderArticoli(doc.items);
         }
@@ -326,7 +339,8 @@
 
         function renderAnagrafiche() {
             const s = document.getElementById('cliente-select');
-            s.innerHTML = anagrafiche.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+            s.innerHTML = '<option value="">-- SELEZIONA UN CLIENTE --</option>' + 
+                          anagrafiche.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
         }
 
         function filterArticoli() {
