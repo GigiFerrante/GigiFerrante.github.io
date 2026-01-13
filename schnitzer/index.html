@@ -109,8 +109,9 @@
             <select id="cliente-select" style="width:100%; padding:10px; font-size:18px;"></select>
         </div>
 
-        <div style="padding:10px;">
+        <div style="padding:10px;position: relative;">
             <input type="text" id="art-search" placeholder="🔍 Cerca articolo..." onkeyup="filterArticoli()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">
+            <span onclick="clearSearch()" style="position: absolute; right: 25px; top: 50%; transform: translateY(-50%); font-size: 24px; color: #999; cursor: pointer; padding: 5px;">&times;</span>
         </div>
         
         <div id="articoli-list"></div>
@@ -357,6 +358,12 @@
             if(!u) return alert("Utente?");
             document.getElementById('user-display').innerText = u.toUpperCase() + " (Zona " + userZona + ")";
             showPage('dashboard');
+        }
+        function clearSearch() {
+            const searchInput = document.getElementById('art-search');
+            searchInput.value = '';
+            searchInput.focus(); // Riporta il focus per scrivere subito
+            filterArticoli();    // Mostra di nuovo tutti gli articoli
         }
     </script>
 </body>
