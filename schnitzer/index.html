@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FruitManager MVP - Professional</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --primary-green: #28a745;
+            --primary-yellow: #ffc107;
+            --danger-red: #dc3545;
+            --bg-light: #f4f7f6;
+        }
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { margin: 0; background: var(--bg-light); touch-action: manipulation; }
+        .hidden { display: none !important; }
+
+        /* LOGIN */
+        #login-screen { padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; }
+        .login-field { width: 100%; margin-bottom: 20px; }
+        .login-field label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .login-field input, .login-field select { width: 100%; padding: 18px; font-size: 20px; border: 2px solid #ccc; border-radius: 10px; }
+
+        /* DASHBOARD & HEADER */
+        .header-bar { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px 15px; background: #eee; border-bottom: 1px solid #ddd; 
+        }
+        .logout-btn { 
+            background: var(--danger-red); border: none; border-radius: 50%; 
+            width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .dashboard { padding: 15px; }
+        .btn-big { 
+            width: 100%; height: 110px; border: none; border-radius: 15px; 
+            font-size: 22px; font-weight: bold; color: white; margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); text-transform: uppercase;
+        }
+        .blue { background-color: var(--primary-blue); }
+        .green { background-color: var(--primary-green); }
+        .yellow { background-color: var(--primary-yellow); color: #333; }
+
+        /* INFO BAR */
+        .doc-info-bar { background: #333; color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+
+        /* HEADER 50/50 */
+        .top-controls { display: flex; width: 100%; background: white; border-bottom: 2px solid #ccc; position: sticky; top: 0; z-index: 100; }
+        .top-half { width: 50%; padding: 10px; border-right: 1px solid #eee; }
+        .top-half label { font-size: 11px; font-weight: bold; display: block; color: #666; }
+        .top-half input, .top-half select { width: 100%; font-size: 16px; padding: 10px 5px; border: 1px solid #aaa; border-radius: 5px; }
+
+        /* LISTA ARTICOLI */
+        .page { padding-bottom: 120px; }
+        .list-item { background: white; padding: 15px 10px; border-bottom: 2px solid #eee; display: flex; flex-direction: column; gap: 8px; }
+        .item-header { font-size: 17px; font-weight: bold; color: var(--primary-blue); }
+        .input-row { display: flex; gap: 8px; }
+        .qty-container { flex: 1; position: relative; }
+        .qty-container label { font-size: 10px; color: #777; position: absolute; top: -7px; left: 8px; background: white; padding: 0 3px; z-index: 1; }
+        .large-input { width: 100%; padding: 15px 5px; font-size: 20px; font-weight: 800; text-align: right; border: 2px solid #ccc; border-radius: 10px; }
+
+        /* BOTTOM BAR */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; display: flex; gap: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.15); z-index: 1000; }
+        .btn-action { flex: 1; padding: 20px; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; color: white; }
+        .btn-save { background: var(--primary-green); }
+        .btn-cancel { background: var(--danger-red); }
+
+        /* ICONA SPEGNIMENTO (CSS) */
+        .icon-power::before { content: "⏻"; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <img src="logo.jpg" alt="Logo" style="width:100px; margin-bottom:20px;" onerror="this.src='https://via.placeholder.com/100'">
+        <div class="login-field"><label>UTENTE</label><input type="text" id="user" placeholder="Inserisci nome"></div>
+        <div class="login-field"><label>PASSWORD</label><input type="password" id="pass" placeholder="********"></div>
+        <div class="login-field"><label>ZONA</label><select id="zona-select"></select></div>
+        <button class="btn-big blue" onclick="handleLogin()" style="height:70px;">ENTRA</button>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <div class="header-bar">
+            <div id="user-display" style="font-weight:bold;"></div>
+            <button class="logout-btn" onclick="logout()" title="Esci">
+                <span class="icon-power"></span>
+            </button>
+        </div>
+        <div class="dashboard">
+            <button class="btn-big blue" onclick="openNewDoc('CARICO')">DOCUMENTO CARICO</button>
+            <button class="btn-big green" onclick="openNewDoc('DDT')">DDT (VENDITA)</button>
+            <button class="btn-big yellow" onclick="showPage('page-modifica')">STAMPA / INVIO</button>
+        </div>
+    </div>
+
+    <div id="page-editor" class="page hidden">
+        <div id="editing-info" class="doc-info-bar">NUOVO DOCUMENTO</div>
+        
+        <div class="top-controls">
+            <div class="top-half"><label>DATA</label><input type="date" id="doc-date-input"></div>
+            <div class="top-half"><label>TARGA</label><select id="targa-select"></select></div>
+        </div>
+
+        <div id="cliente-area" class="hidden" style="padding:10px; background: #e9f5ec;">
+            <label style="font-size:11px; font-weight:bold;">CLIENTE</label>
+            <select id="cliente-select" style="width:100%; padding:10px; font-size:18px;"></select>
+        </div>
+
+        <div style="padding:10px;">
+            <input type="text" id="art-search" placeholder="🔍 Cerca articolo..." onkeyup="filterArticoli()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">
+        </div>
+        
+        <div id="articoli-list"></div>
+
+        <div class="bottom-bar">
+            <button class="btn-action btn-cancel" onclick="showPage('dashboard')">ANNULLA</button>
+            <button class="btn-action btn-save" onclick="salvaInLocale()">SALVA</button>
+        </div>
+    </div>
+
+    <div id="page-modifica" class="page hidden">
+        <div style="padding: 15px;">
+            <h3 style="margin-top:0">Documenti in attesa</h3>
+            <div id="lista-ddt-attesa"></div>
+        </div>
+        <div class="bottom-bar">
+            <button class="btn-action btn-cancel" onclick="showPage('dashboard')" style="width:100%">TORNA INDIETRO</button>
+        </div>
+    </div>
+
+    <script>
+        let articoli = [];
+        let anagrafiche = [];
+        let targhe = [];
+        let ddtSalvati = JSON.parse(localStorage.getItem('ddt_local') || '[]');
+        let currentEditingId = null;
+        let currentType = '';
+        let userZona = '00';
+
+        window.onload = async () => {
+            popolaZone();
+            await caricaCSV();
+            renderTarghe();
+        };
+
+        function logout() {
+            if(confirm("Vuoi tornare alla pagina di login?")) {
+                showPage('login-screen');
+            }
+        }
+
+        function popolaZone() {
+            const s = document.getElementById('zona-select');
+            for(let i=0; i<=10; i++) {
+                let v = i.toString().padStart(2,'0');
+                s.innerHTML += `<option value="${v}">Zona ${v}</option>`;
+            }
+        }
+
+        async function caricaCSV() {
+            try {
+                const resArt = await fetch('ANAPC00F_20260112 prodotti - Copia.csv');
+                const textArt = await resArt.text();
+                articoli = textArt.split('\n').slice(2).filter(r => r.includes('|')).map(row => {
+                    const c = row.split('|');
+                    return { id: c[0], um: c[1], nome: c[4], prezzo: c[6] };
+                });
+
+                const resAna = await fetch('anagrafiche_00.csv');
+                const textAna = await resAna.text();
+                anagrafiche = textAna.split('\n').slice(1).filter(r => r.includes('|')).map(row => {
+                    const c = row.split('|');
+                    return { id: c[0], nome: c[3] };
+                });
+
+                const resTar = await fetch('targhe.csv');
+                const textTar = await resTar.text();
+                targhe = textTar.split('\n').map(t => t.trim()).filter(t => t);
+            } catch (e) { console.error("CSV error."); }
+        }
+
+        function renderTarghe() {
+            const s = document.getElementById('targa-select');
+            s.innerHTML = targhe.map(t => `<option value="${t}">${t}</option>`).join('');
+            if(localStorage.getItem('ultima_targa')) s.value = localStorage.getItem('ultima_targa');
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.page, #login-screen, #dashboard').forEach(p => p.classList.add('hidden'));
+            const target = document.getElementById(id);
+            if(target) target.classList.remove('hidden');
+            if(id === 'page-modifica') renderListaModifica();
+        }
+
+        function generaNumeroDocumento() {
+            const anno = new Date().getFullYear().toString().substr(-2);
+            let progressivo = parseInt(localStorage.getItem('prog_doc') || '0') + 1;
+            localStorage.setItem('prog_doc', progressivo);
+            return `${userZona}-${anno}-${progressivo.toString().padStart(5, '0')}`;
+        }
+
+        function openNewDoc(type) {
+            currentType = type;
+            currentEditingId = null;
+            document.getElementById('editing-info').innerText = "NUOVO: " + type;
+            document.getElementById('doc-date-input').valueAsDate = new Date();
+            document.getElementById('cliente-area').className = (type === 'DDT' ? '' : 'hidden');
+            showPage('page-editor');
+            renderArticoli();
+            if(type === 'DDT') renderAnagrafiche();
+        }
+
+        function renderArticoli(datiPreesistenti = null) {
+            const container = document.getElementById('articoli-list');
+            container.innerHTML = articoli.map(art => {
+                let qtaVal = "", colliVal = "", przVal = parseFloat(art.prezzo || 0).toFixed(2);
+                
+                if(datiPreesistenti) {
+                    const trovato = datiPreesistenti.find(r => r.id === art.id);
+                    if(trovato) {
+                        qtaVal = trovato.qta;
+                        colliVal = trovato.colli || "";
+                        przVal = trovato.prezzo;
+                    }
+                }
+
+                return `
+                <div class="list-item" data-id="${art.id}" data-nome="${art.nome}">
+                    <div class="item-header">${art.nome}</div>
+                    <div class="input-row">
+                        ${currentType === 'CARICO' ? `
+                            <div class="qty-container">
+                                <label>COLLI</label>
+                                <input type="number" class="large-input colli-in" value="${colliVal}" onfocus="this.select()">
+                            </div>
+                            <div class="qty-container">
+                                <label>QUANTITÀ</label>
+                                <input type="number" step="0.01" class="large-input qta-in" value="${qtaVal}" onfocus="this.select()">
+                            </div>
+                        ` : `
+                            <div class="qty-container">
+                                <label>PREZZO €</label>
+                                <input type="number" step="0.01" class="large-input prz-in" value="${przVal}">
+                            </div>
+                            <div class="qty-container">
+                                <label>QUANTITÀ</label>
+                                <input type="number" step="0.01" class="large-input qta-in" value="${qtaVal}" onfocus="this.select()">
+                            </div>
+                        `}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function salvaInLocale() {
+            const items = [];
+            document.querySelectorAll('.list-item').forEach(el => {
+                const qta = el.querySelector('.qta-in').value;
+                const colli = currentType === 'CARICO' ? el.querySelector('.colli-in').value : 0;
+                
+                if(qta > 0 || colli > 0) {
+                    items.push({
+                        id: el.dataset.id,
+                        nome: el.dataset.nome,
+                        qta: qta,
+                        colli: colli,
+                        prezzo: currentType === 'DDT' ? el.querySelector('.prz-in').value : 0
+                    });
+                }
+            });
+
+            if(items.length === 0) return alert("Dati mancanti!");
+
+            let docId = currentEditingId || generaNumeroDocumento();
+            const doc = {
+                id: docId, tipo: currentType, data: document.getElementById('doc-date-input').value,
+                targa: document.getElementById('targa-select').value,
+                clienteId: currentType === 'DDT' ? document.getElementById('cliente-select').value : 'MAGAZZINO',
+                clienteNome: currentType === 'DDT' ? document.getElementById('cliente-select').options[document.getElementById('cliente-select').selectedIndex].text : 'CARICO',
+                items: items
+            };
+
+            const index = ddtSalvati.findIndex(d => d.id === docId);
+            if(index > -1) ddtSalvati[index] = doc; else ddtSalvati.push(doc);
+
+            localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+            showPage('dashboard');
+        }
+
+        function renderListaModifica() {
+            const container = document.getElementById('lista-ddt-attesa');
+            container.innerHTML = ddtSalvati.length === 0 ? "<p>Vuoto</p>" : ddtSalvati.map(d => `
+                <div style="background:white; margin-bottom:10px; padding:15px; border-radius:10px; border-left:8px solid var(--primary-green)">
+                    <strong>${d.id}</strong> - ${d.clienteNome}<br><small>${d.data} | ${d.targa}</small>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:10px;">EDIT</button>
+                        <button class="btn-big yellow" onclick="stampaEInvia('${d.id}')" style="flex:1; height:45px; margin:0; font-size:14px;">STAMPA</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function caricaPerModifica(id) {
+            const doc = ddtSalvati.find(d => d.id === id);
+            currentEditingId = id; currentType = doc.tipo;
+            showPage('page-editor');
+            document.getElementById('editing-info').innerText = "MODIFICA: " + id;
+            document.getElementById('doc-date-input').value = doc.data;
+            document.getElementById('targa-select').value = doc.targa;
+            document.getElementById('cliente-area').className = (doc.tipo === 'DDT' ? '' : 'hidden');
+            if(doc.tipo === 'DDT') {
+                renderAnagrafiche();
+                document.getElementById('cliente-select').value = doc.clienteId;
+            }
+            renderArticoli(doc.items);
+        }
+
+        async function stampaEInvia(id) {
+            alert("Stampato!");
+            ddtSalvati = ddtSalvati.filter(d => d.id !== id);
+            localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+            renderListaModifica();
+        }
+
+        function renderAnagrafiche() {
+            const s = document.getElementById('cliente-select');
+            s.innerHTML = anagrafiche.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+        }
+
+        function filterArticoli() {
+            const q = document.getElementById('art-search').value.toLowerCase();
+            document.querySelectorAll('.list-item').forEach(item => {
+                item.style.display = item.dataset.nome.toLowerCase().includes(q) ? 'flex' : 'none';
+            });
+        }
+
+        function handleLogin() {
+            const u = document.getElementById('user').value;
+            userZona = document.getElementById('zona-select').value;
+            if(!u) return alert("Utente?");
+            document.getElementById('user-display').innerText = u.toUpperCase() + " (Zona " + userZona + ")";
+            showPage('dashboard');
+        }
+    </script>
+</body>
+</html>
