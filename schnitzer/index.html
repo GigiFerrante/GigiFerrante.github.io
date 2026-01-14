@@ -167,7 +167,7 @@
                 const textArt = await resArt.text();
                 articoli = textArt.split('\n').slice(2).filter(r => r.includes('|')).map(row => {
                     const c = row.split('|');
-                    return { id: c[0], um: c[1], nome: c[4], prezzo: c[6] };
+                    return { id: c[0], um: c[1], nome: c[3], prezzo: c[6] };
                 });
 
                 const resAna = await fetch('anagrafiche_00.csv');
@@ -235,7 +235,7 @@
 
                 return `
                 <div class="list-item" data-id="${art.id}" data-nome="${art.nome}">
-                    <div class="item-header">${art.nome}</div>
+                    <div class="item-header">${art.id} ${art.nome}</div>
                     <div class="input-row">
                         ${currentType === 'CARICO' ? `
                             <div class="qty-container">
@@ -243,17 +243,17 @@
                                 <input type="number" class="large-input colli-in" value="${colliVal}" onfocus="this.select()">
                             </div>
                             <div class="qty-container">
-                                <label>QUANTITÀ</label>
+                                <label>QUANTITÀ ${art.um}</label>
                                 <input type="number" step="0.01" class="large-input qta-in" value="${qtaVal}" onfocus="this.select()">
                             </div>
                         ` : `
                             <div class="qty-container">
-                                <label>PREZZO €</label>
-                                <input type="number" step="0.01" class="large-input prz-in" value="${przVal}">
+                                <label>QUANTITÀ ${art.um}</label>
+                                <input type="number" step="0.01" class="large-input qta-in" value="${qtaVal}" onfocus="this.select()">
                             </div>
                             <div class="qty-container">
-                                <label>QUANTITÀ</label>
-                                <input type="number" step="0.01" class="large-input qta-in" value="${qtaVal}" onfocus="this.select()">
+                                <label>PREZZO €</label>
+                                <input type="number" step="0.01" class="large-input prz-in" value="${przVal}">
                             </div>
                         `}
                     </div>
