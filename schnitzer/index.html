@@ -170,7 +170,7 @@
                     return { id: c[0], um: c[1], nome: c[3], prezzo: c[6] };
                 });
 
-                const resAna = await fetch('anagrafiche_00.csv');
+                const resAna = await fetch('ANCPC00F_20260112 clienti - Copia.csv');
                 const textAna = await resAna.text();
                 anagrafiche = textAna.split('\n').slice(1).filter(r => r.includes('|')).map(row => {
                     const c = row.split('|');
