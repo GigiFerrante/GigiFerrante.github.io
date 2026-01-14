@@ -78,7 +78,7 @@
         <img src="logo.jpg" alt="Logo" style="width:100px; margin-bottom:20px;" onerror="this.src='https://via.placeholder.com/100'">
         <div class="login-field"><label>UTENTE</label><input type="text" id="user" placeholder="Inserisci nome"></div>
         <div class="login-field"><label>PASSWORD</label><input type="password" id="pass" placeholder="********"></div>
-        <div class="login-field"><label>ZONA</label><select id="zona-select"></select></div>
+        <!--<div class="login-field"><label>ZONA</label><select id="zona-select"></select></div>-->
         <button class="btn-big blue" onclick="handleLogin()" style="height:70px;">ENTRA</button>
     </div>
 
@@ -104,9 +104,14 @@
             <div class="top-half"><label>TARGA</label><select id="targa-select"></select></div>
         </div>
 
-        <div id="cliente-area" class="hidden" style="padding:10px; background: #e9f5ec;">
-            <label style="font-size:11px; font-weight:bold;">CLIENTE</label>
-            <select id="cliente-select" style="width:100%; padding:10px; font-size:18px;"></select>
+        <div id="cliente-area" class="cliente-box hidden">
+            <label>CERCA CLIENTE</label>
+            <div style="position: relative; margin-bottom: 8px;">
+                <input type="text" id="ana-search" placeholder="Digita nome cliente..." onkeyup="filterAnagrafiche()" style="width:100%; padding:12px; padding-right:40px; border-radius:8px; border:1px solid var(--primary-green);">
+                <span onclick="clearAnaSearch()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 24px; color: #999; cursor: pointer;">&times;</span>
+            </div>
+            <label>SELEZIONA DALLA LISTA</label>
+            <select id="cliente-select"></select>
         </div>
 
         <div style="padding:10px;position: relative;">
@@ -209,6 +214,9 @@
         }
 
         function openNewDoc(type) {
+            document.getElementById('ana-search').value = '';
+            document.getElementById('ana-search').parentElement.style.display = 'block'; // Mostra ricerca in creazione
+
             currentType = type;
             currentEditingId = null;
             document.getElementById('editing-info').innerText = "NUOVO: " + type;
@@ -314,6 +322,7 @@
         }
 
         function caricaPerModifica(id) {
+            document.getElementById('ana-search').parentElement.style.display = 'none'; // Nasconde ricerca in modifica
             const doc = ddtSalvati.find(d => d.id === id);
             currentEditingId = id; currentType = doc.tipo;
             showPage('page-editor');
@@ -364,6 +373,30 @@
             searchInput.value = '';
             searchInput.focus(); // Riporta il focus per scrivere subito
             filterArticoli();    // Mostra di nuovo tutti gli articoli
+        }
+
+        function filterAnagrafiche() {
+            const query = document.getElementById('ana-search').value.toLowerCase();
+            const select = document.getElementById('cliente-select');
+            const options = select.options;
+            let firstFound = false;
+
+            for (let i = 1; i < options.length; i++) { // Parte da 1 per saltare l'opzione vuota
+                const text = options[i].text.toLowerCase();
+                const match = text.includes(query);
+                options[i].style.display = match ? 'block' : 'none';
+                if (match && !firstFound) {
+                    select.value = options[i].value; // Seleziona automaticamente il primo risultato
+                    firstFound = true;
+                }
+            }
+        }
+
+        function clearAnaSearch() {
+            document.getElementById('ana-search').value = '';
+            const options = document.getElementById('cliente-select').options;
+            for (let i = 0; i < options.length; i++) options[i].style.display = 'block';
+            document.getElementById('cliente-select').value = "";
         }
     </script>
 </body>
