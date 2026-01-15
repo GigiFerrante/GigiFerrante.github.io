@@ -268,14 +268,16 @@
             }
         }
 
-        function selezionaCliente(id, nome) {
-            clienteSelezionato = { id, nome };
+        function selezionaCliente(id, nome, zona) { // Aggiunto parametro zona
+            clienteSelezionato = { id, nome, zona }; 
             const input = document.getElementById('cliente-search');
             input.value = `${id} - ${nome}`;
-            input.disabled = true; // Blocca dopo la selezione
-            input.style.background = "#e9f5ec";
+            input.disabled = true;
             
             document.getElementById('selected-cliente-id').value = id;
+            // Memorizziamo la zona in un attributo data per recuperarla dopo
+            document.getElementById('selected-cliente-id').dataset.zona = zona; 
+            
             document.getElementById('clienti-suggeriti').style.display = 'none';
             document.getElementById('btn-reset-cliente').style.display = 'block';
         }
@@ -316,10 +318,15 @@
                     }
                     const text = await response.text();
                     const righe = text.split('\n').slice(1); // Salta la prima riga (intestazione)
-                    
+                                        
+                    // Nella funzione caricaAnagraficheZone, modifica il mapping:
                     const nuoviClienti = righe.filter(r => r.includes('|')).map(row => {
                         const c = row.split('|');
-                        return { id: c[0], nome: c[3] };
+                        return { 
+                            id: c[0], 
+                            nome: c[3], 
+                            zonaVera: c[2] // <--- Salviamo il terzo campo (indice 2)
+                        };
                     });
                     
                     anagrafiche = anagrafiche.concat(nuoviClienti);
@@ -428,8 +435,9 @@
 
         function salvaInLocale() {
             // 1. Recuperiamo l'ID del cliente dal campo nascosto
-            const idCli = document.getElementById('selected-cliente-id').value;
-
+            const campoIdCli = document.getElementById('selected-cliente-id');
+            const idCli = campoIdCli.value;
+    
             // 2. Controllo obbligatorietà per DDT
             if(currentType === 'DDT' && !idCli) return alert("ERRORE: Seleziona un cliente!");
 
@@ -451,16 +459,16 @@
 
             let docId = currentEditingId;
             if(!docId) {
-                // 1. Prendi il nome utente dal display e isola le prime 3 lettere
                 const nomeUtente = document.getElementById('user').value || "XXX";
                 const prefix = nomeUtente.substring(0, 3).toUpperCase();
 
                 if (currentType === 'DDT') {
-                    const zona = idCli.substring(0, 2);
-                    // Genera: UTE-ZO-IDCLI-PROG (es: MAR-05-05123-00001)
-                    docId = generaNumeroDocumento(prefix, zona, idCli);
+                    // RECUPERO ZONA DAL TERZO CAMPO (salvato nel dataset)
+                    const zonaDati = campoIdCli.dataset.zona || "00"; 
+                    
+                    // Genera: UTE - ZONA(3°campo) - IDCLI - PROG
+                    docId = generaNumeroDocumento(prefix, zonaDati, idCli);
                 } else {
-                    // Genera: UTE-PROG (es: MAR-00001)
                     docId = generaNumeroDocumento(prefix);
                 }
             }
