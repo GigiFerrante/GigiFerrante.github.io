@@ -257,9 +257,9 @@
 
             if (matches.length > 0) {
                 suggeriti.innerHTML = matches.map(a => `
-                    <div onclick="selezionaCliente('${a.id}', '${a.nome.replace(/'/g, "\\'")}')" 
-                        style="padding: 15px; border-bottom: 1px solid #eee; font-size: 16px;">
-                        <strong>${a.id}</strong> - ${a.nome}
+                    <div onclick="selezionaCliente('${a.id}', '${a.nome.replace(/'/g, "\\'")}', '${a.zonaVera}')" 
+                        style="padding: 15px; border-bottom: 1px solid #eee;">
+                        <strong>${a.id}</strong> - ${a.nome} (Zona: ${a.zonaVera})
                     </div>
                 `).join('');
                 suggeriti.style.display = 'block';
@@ -268,15 +268,15 @@
             }
         }
 
-        function selezionaCliente(id, nome, zona) { // Aggiunto parametro zona
-            clienteSelezionato = { id, nome, zona }; 
-            const input = document.getElementById('cliente-search');
-            input.value = `${id} - ${nome}`;
-            input.disabled = true;
+        function selezionaCliente(id, nome, zona) {
+            const inputVisuale = document.getElementById('cliente-search');
+            const inputNascosto = document.getElementById('selected-cliente-id');
             
-            document.getElementById('selected-cliente-id').value = id;
-            // Memorizziamo la zona in un attributo data per recuperarla dopo
-            document.getElementById('selected-cliente-id').dataset.zona = zona; 
+            inputVisuale.value = `${id} - ${nome}`;
+            inputVisuale.disabled = true;
+            
+            inputNascosto.value = id;
+            inputNascosto.dataset.zona = zona; // <--- Qui salviamo il terzo campo
             
             document.getElementById('clienti-suggeriti').style.display = 'none';
             document.getElementById('btn-reset-cliente').style.display = 'block';
@@ -323,9 +323,9 @@
                     const nuoviClienti = righe.filter(r => r.includes('|')).map(row => {
                         const c = row.split('|');
                         return { 
-                            id: c[0], 
-                            nome: c[3], 
-                            zonaVera: c[2] // <--- Salviamo il terzo campo (indice 2)
+                            id: c[0].trim(), 
+                            nome: c[3].trim(), 
+                            zonaVera: c[2].trim() // <--- Questo è il terzo campo del CSV
                         };
                     });
                     
@@ -435,8 +435,9 @@
 
         function salvaInLocale() {
             // 1. Recuperiamo l'ID del cliente dal campo nascosto
-            const campoIdCli = document.getElementById('selected-cliente-id');
-            const idCli = campoIdCli.value;
+            const campoNascosto = document.getElementById('selected-cliente-id');
+            const idCli = campoNascosto.value;
+            const zonaDati = campoNascosto.dataset.zona; // Recupera il valore salvato sopra
     
             // 2. Controllo obbligatorietà per DDT
             if(currentType === 'DDT' && !idCli) return alert("ERRORE: Seleziona un cliente!");
@@ -463,10 +464,10 @@
                 const prefix = nomeUtente.substring(0, 3).toUpperCase();
 
                 if (currentType === 'DDT') {
-                    // RECUPERO ZONA DAL TERZO CAMPO (salvato nel dataset)
-                    const zonaDati = campoIdCli.dataset.zona || "00"; 
+                    const nomeUtente = document.getElementById('user').value || "XXX";
+                    const prefix = nomeUtente.substring(0, 3).toUpperCase();
                     
-                    // Genera: UTE - ZONA(3°campo) - IDCLI - PROG
+                    // Ora zonaDati contiene il terzo campo del CSV
                     docId = generaNumeroDocumento(prefix, zonaDati, idCli);
                 } else {
                     docId = generaNumeroDocumento(prefix);
