@@ -468,16 +468,30 @@
         }
 
         function renderListaModifica() {
-            const container = document.getElementById('lista-ddt-attesa');
-            container.innerHTML = ddtSalvati.length === 0 ? "<p>Vuoto</p>" : ddtSalvati.map(d => `
-                <div style="background:white; margin-bottom:10px; padding:15px; border-radius:10px; border-left:8px solid var(--primary-green)">
-                    <strong>${d.id}</strong> - ${d.clienteNome}<br><small>${d.data} | ${d.targa}</small>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:10px;">EDIT</button>
-                        <button class="btn-big yellow" onclick="stampaEInvia('${d.id}')" style="flex:1; height:45px; margin:0; font-size:14px;">STAMPA</button>
+            const c = document.getElementById('lista-ddt-attesa');
+            
+            c.innerHTML = ddtSalvati.map(d => {
+                // MODIFICA: Formattazione data da YYYY-MM-DD a DD/MM/YYYY
+                const dataParti = d.data.split('-'); 
+                const dataIta = `${dataParti[2]}/${dataParti[1]}/${dataParti[0]}`;
+
+                return `
+                    <div style="background:white; padding:15px; margin-bottom:10px; border-radius:10px; border-left:8px solid var(--primary-green)">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <strong>${d.id}</strong>
+                            <span style="font-size:12px; background:#eee; padding:2px 5px; border-radius:4px;">${d.tipo}</span>
+                        </div>
+                        <div style="margin: 5px 0; color: #555;">
+                            ${d.clienteNome}<br>
+                            <small>Data: <strong>${dataIta}</strong> | Targa: ${d.targa}</small>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:12px; background:#f8f9fa; border:1px solid #ccc; border-radius:8px; font-weight:bold;">MODIFICA</button>
+                            <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:12px; background:var(--primary-yellow); border:none; border-radius:8px; font-weight:bold;">STAMPA</button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function caricaPerModifica(id) {
