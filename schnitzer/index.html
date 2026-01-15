@@ -347,13 +347,19 @@
             if(id === 'page-modifica') renderListaModifica();
         }
 
-        function generaNumeroDocumento(zonaDaAnagrafica) {
-            const anno = new Date().getFullYear().toString().substr(-2);
+        function generaNumeroDocumento(prefix, zona, clienteId) {
             let prog = parseInt(localStorage.getItem('prog_doc') || '0') + 1;
             localStorage.setItem('prog_doc', prog);
             
-            // zonaDaAnagrafica sarà composta dai primi 2 caratteri dell'ID cliente
-            return `${zonaDaAnagrafica}-${anno}-${prog.toString().padStart(5, '0')}`;
+            const progressivoFmt = prog.toString().padStart(5, '0');
+
+            if (currentType === 'DDT') {
+                // Formato DDT: UTE - ZONA - IDCLIENTE - PROG
+                return `${prefix}-${zona}-${clienteId}-${progressivoFmt}`;
+            } else {
+                // Formato CARICO: UTE - PROG
+                return `${prefix}-${progressivoFmt}`;
+            }
         }
 
         function openNewDoc(type) {
@@ -422,10 +428,10 @@
 
         function salvaInLocale() {
             // 1. Recuperiamo l'ID del cliente dal campo nascosto
-            const idCli = document.getElementById('selected-cliente-id').value; 
+            const idCli = document.getElementById('selected-cliente-id').value;
 
             // 2. Controllo obbligatorietà per DDT
-            if(currentType === 'DDT' && !idCli) return alert("ERRORE: Seleziona un cliente dall'elenco!");
+            if(currentType === 'DDT' && !idCli) return alert("ERRORE: Seleziona un cliente!");
 
             const items = [];
             document.querySelectorAll('.list-item').forEach(el => {
@@ -445,9 +451,18 @@
 
             let docId = currentEditingId;
             if(!docId) {
-                // MODIFICA CORRETTA: usiamo 'idCli' che abbiamo definito sopra
-                const zonaPerDoc = (currentType === 'DDT') ? zoneSelezionate[0] + "-" + idCli.substring(0, 2) : zoneSelezionate[0];
-                docId = generaNumeroDocumento(zonaPerDoc);
+                // 1. Prendi il nome utente dal display e isola le prime 3 lettere
+                const nomeUtente = document.getElementById('user').value || "XXX";
+                const prefix = nomeUtente.substring(0, 3).toUpperCase();
+
+                if (currentType === 'DDT') {
+                    const zona = idCli.substring(0, 2);
+                    // Genera: UTE-ZO-IDCLI-PROG (es: MAR-05-05123-00001)
+                    docId = generaNumeroDocumento(prefix, zona, idCli);
+                } else {
+                    // Genera: UTE-PROG (es: MAR-00001)
+                    docId = generaNumeroDocumento(prefix);
+                }
             }
 
             const doc = {
