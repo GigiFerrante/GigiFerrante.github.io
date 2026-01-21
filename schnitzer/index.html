@@ -256,10 +256,14 @@
             ).slice(0, 10); // Mostra solo i primi 10 per velocità
 
             if (matches.length > 0) {
+                // Nella funzione cercaClienteLive
                 suggeriti.innerHTML = matches.map(a => `
                     <div onclick="selezionaCliente('${a.id}', '${a.nome.replace(/'/g, "\\'")}', '${a.zonaVera}')" 
-                        style="padding: 15px; border-bottom: 1px solid #eee;">
-                        <strong>${a.id}</strong> - ${a.nome} (Zona: ${a.zonaVera})
+                        style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;">
+                        <div style="font-weight: bold; color: var(--primary-blue);">${a.id} - ${a.nome}</div>
+                        <div style="font-size: 13px; color: #666;">
+                            Loc: <strong>${a.localita}</strong> | Zona: ${a.zonaVera}
+                        </div>
                     </div>
                 `).join('');
                 suggeriti.style.display = 'block';
@@ -325,7 +329,8 @@
                         return { 
                             id: c[0].trim(), 
                             nome: c[3].trim(), 
-                            zonaVera: c[2].trim() // <--- Questo è il terzo campo del CSV
+                            zonaVera: c[2].trim(),// Terzo campo
+                            localita: c[4] ? c[4].trim() : "" // <--- Quinto campo (LOCCL)
                         };
                     });
                     
@@ -444,17 +449,39 @@
 
             const items = [];
             document.querySelectorAll('.list-item').forEach(el => {
-                const qta = el.querySelector('.qta-in').value;
-                if(qta > 0) {
+                const qtaInput = el.querySelector('.qta-in');
+                const colliInput = el.querySelector('.colli-in');
+                
+                const qta = qtaInput ? qtaInput.value : "";
+                const colli = colliInput ? colliInput.value : "";
+                const nomeArt = el.dataset.nome;
+
+                // MODIFICA: Logica obbligatorietà incrociata per CARICO
+                if (currentType === 'CARICO') {
+                    // Se uno dei due è pieno e l'altro è vuoto (o zero)
+                    if ((qta > 0 && (!colli || colli <= 0)) || (colli > 0 && (!qta || qta <= 0))) {
+                        alert(`ERRORE su "${nomeArt}":\nSe inserisci i Colli devi inserire la Quantità (e viceversa).`);
+                        erroreValidazione = true;
+                        el.style.background = "#ffe6e6"; // Evidenzia la riga con errore
+                        return;
+                    }
+                }
+
+                // Se entrambi sono compilati correttamente, aggiungi all'array
+                if (qta > 0) {
                     items.push({
                         id: el.dataset.id,
-                        nome: el.dataset.nome,
+                        nome: nomeArt,
                         qta: qta,
-                        colli: currentType === 'CARICO' ? el.querySelector('.colli-in').value : 0,
+                        colli: colli || 0,
                         prezzo: currentType === 'DDT' ? el.querySelector('.prz-in').value : 0
                     });
                 }
+                
             });
+
+            if (erroreValidazione) return; // Blocca il salvataggio se c'è un errore
+            if (items.length === 0) return alert("Inserisci almeno un articolo!");
 
             if(items.length === 0) return alert("Inserisci almeno un articolo!");
 
