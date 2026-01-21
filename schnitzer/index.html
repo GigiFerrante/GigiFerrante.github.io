@@ -538,25 +538,56 @@
 
         function renderListaModifica() {
             const c = document.getElementById('lista-ddt-attesa');
-            
+            if (!c) return;
+
             c.innerHTML = ddtSalvati.map(d => {
-                // MODIFICA: Formattazione data da YYYY-MM-DD a DD/MM/YYYY
-                const dataParti = d.data.split('-'); 
+                const dataParti = d.data.split('-');
                 const dataIta = `${dataParti[2]}/${dataParti[1]}/${dataParti[0]}`;
+                
+                // Variabile per accumulare il totale del documento
+                let totaleDocumento = 0;
+
+                const anteprimaArticoli = d.items.map(item => {
+                    const qtaFmt = parseFloat(item.qta).toFixed(3);
+                    const przFmt = parseFloat(item.prezzo || 0).toFixed(2);
+                    
+                    // Calcolo riga e aggiunta al totale (solo se è un DDT)
+                    if (d.tipo === 'DDT') {
+                        totaleDocumento += (parseFloat(item.qta) * parseFloat(item.prezzo));
+                    }
+
+                    return `<div style="font-size: 11px; border-bottom: 1px dotted #ccc; display: flex; justify-content: space-between; padding: 2px 0;">
+                                <span>${item.nome.substring(0, 20)}</span>
+                                <span><strong>${qtaFmt}</strong> x €${przFmt}</span>
+                            </div>`;
+                }).join('');
 
                 return `
-                    <div style="background:white; padding:15px; margin-bottom:10px; border-radius:10px; border-left:8px solid var(--primary-green)">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="background:white; padding:15px; margin-bottom:15px; border-radius:10px; border-left:8px solid var(--primary-green); box-shadow: 0 2px 8px rgba(0,0,0,0.1)">
+                        <div style="display:flex; justify-content:space-between;">
                             <strong>${d.id}</strong>
                             <span style="font-size:12px; background:#eee; padding:2px 5px; border-radius:4px;">${d.tipo}</span>
                         </div>
-                        <div style="margin: 5px 0; color: #555;">
-                            ${d.clienteNome}<br>
-                            <small>Data: <strong>${dataIta}</strong> | Targa: ${d.targa}</small>
+                        
+                        <div style="margin: 5px 0;">
+                            <div style="font-weight:bold; color: #333;">${d.clienteNome}</div>
+                            <small style="color: #666;">Data: ${dataIta} | Targa: ${d.targa}</small>
                         </div>
+                        
+                        <div style="background: #fdfdfd; padding: 8px; border-radius: 5px; border: 1px solid #eee; margin: 10px 0;">
+                            ${anteprimaArticoli}
+                            
+                            ${d.tipo === 'DDT' ? `
+                                <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:5px; border-top: 2px solid #ddd; font-size: 14px;">
+                                    <strong>TOTALE DOCUMENTO</strong>
+                                    <strong style="color: var(--primary-blue);">€ ${totaleDocumento.toFixed(2)}</strong>
+                                </div>
+                            ` : ''}
+                        </div>
+
                         <div style="display:flex; gap:10px; margin-top:10px;">
-                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:12px; background:#f8f9fa; border:1px solid #ccc; border-radius:8px; font-weight:bold;">MODIFICA</button>
-                            <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:12px; background:var(--primary-yellow); border:none; border-radius:8px; font-weight:bold;">STAMPA</button>
+                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:12px; background:#f8f9fa; border:1px solid #ccc; border-radius:8px; font-weight:bold; cursor:pointer;">MODIFICA</button>
+                            <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:12px; background:var(--primary-yellow); border:none; border-radius:8px; font-weight:bold; cursor:pointer;">STAMPA</button>
                         </div>
                     </div>
                 `;
