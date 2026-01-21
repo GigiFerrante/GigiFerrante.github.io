@@ -438,15 +438,19 @@
                             </div>
                         `}
                     </div>
+                    <span class="error-msg" style="color:red; font-size:11px; font-weight:bold; display:block; margin-top:5px; height:15px;"></span>
                 </div>`;
             }).join('');
         }
 
         function pulisciErrore(inputElement) {
-            // Risale fino al div della riga (list-item) e resetta il colore
             const riga = inputElement.closest('.list-item');
             if (riga) {
+                // Rimuove il colore rosso
                 riga.style.background = "white"; 
+                // Cerca lo span che abbiamo aggiunto sopra e svuota il testo
+                const msg = riga.querySelector('.error-msg');
+                if (msg) msg.innerText = ""; 
             }
         }
 
@@ -463,39 +467,42 @@
 
             const items = [];
             document.querySelectorAll('.list-item').forEach(el => {
-
-                const qtaInput = parseFloat(el.querySelector('.qta-in').value) || 0;
-                const prezzo = parseFloat(el.querySelector('.prz-in').value) || 0;
-
-                const colliInput = el.querySelector('.colli-in');
-                
-                const qta = qtaInput ? qtaInput.value : "";
-                const colli = colliInput ? colliInput.value : "";
-                const nomeArt = el.dataset.nome;
+                // Recuperiamo i riferimenti agli input
+                const inputQta = el.querySelector('.qta-in');
+                const inputColli = el.querySelector('.colli-in');
+                const inputPrz = el.querySelector('.prz-in');
                 erroreValidazione = false;
 
-                // MODIFICA: Logica obbligatorietà incrociata per CARICO
+                // Leggiamo i valori solo se l'input esiste, altrimenti usiamo 0
+                const qta = inputQta ? parseFloat(inputQta.value) : 0;
+                const colli = inputColli ? parseInt(inputColli.value) : 0;
+                const prezzo = inputPrz ? parseFloat(inputPrz.value) : 0; // <--- CORREZIONE: controllo se esiste
+                
+                const errorSpan = el.querySelector('.error-msg');
+                const nomeArt = el.dataset.nome;
+
                 if (currentType === 'CARICO') {
-                    // Se uno dei due è pieno e l'altro è vuoto (o zero)
-                    if ((qta > 0 && (!colli || colli <= 0)) || (colli > 0 && (!qta || qta <= 0))) {
-                        alert(`ERRORE su "${nomeArt}":\nSe inserisci i Colli devi inserire la Quantità (e viceversa).`);
+                    let messaggio = "";
+                    if (qta > 0 && colli <= 0) messaggio = "⚠️ Inserire anche i Colli";
+                    if (colli > 0 && qta <= 0) messaggio = "⚠️ Inserire anche la Quantità";
+
+                    if (messaggio) {
+                        el.style.background = "#ffe6e6";
+                        if (errorSpan) errorSpan.innerText = messaggio;
                         erroreValidazione = true;
-                        el.style.background = "#ffe6e6"; // Evidenzia la riga con errore
                         return;
                     }
                 }
 
-                // Se entrambi sono compilati correttamente, aggiungi all'array
-                if (qta > 0) {
+                if (qta > 0 || colli > 0) {
                     items.push({
                         id: el.dataset.id,
                         nome: nomeArt,
                         qta: parseFloat(qta.toFixed(3)),
-                        colli: parseInt(colli) || 0,
-                        prezzo: currentType === 'DDT' ? parseFloat(prezzo.toFixed(2)) : 0
+                        colli: colli,
+                        prezzo: parseFloat(prezzo.toFixed(2))
                     });
                 }
-                
             });
 
             if (erroreValidazione) return; // Blocca il salvataggio se c'è un errore
@@ -544,50 +551,45 @@
                 const dataParti = d.data.split('-');
                 const dataIta = `${dataParti[2]}/${dataParti[1]}/${dataParti[0]}`;
                 
-                // Variabile per accumulare il totale del documento
-                let totaleDocumento = 0;
-
-                const anteprimaArticoli = d.items.map(item => {
-                    const qtaFmt = parseFloat(item.qta).toFixed(3);
-                    const przFmt = parseFloat(item.prezzo || 0).toFixed(2);
-                    
-                    // Calcolo riga e aggiunta al totale (solo se è un DDT)
-                    if (d.tipo === 'DDT') {
-                        totaleDocumento += (parseFloat(item.qta) * parseFloat(item.prezzo));
-                    }
-
-                    return `<div style="font-size: 11px; border-bottom: 1px dotted #ccc; display: flex; justify-content: space-between; padding: 2px 0;">
-                                <span>${item.nome.substring(0, 20)}</span>
-                                <span><strong>${qtaFmt}</strong> x €${przFmt}</span>
-                            </div>`;
-                }).join('');
+                let totaleGenerale = 0;
+                if (d.tipo === 'DDT') {
+                    totaleGenerale = d.items.reduce((acc, item) => {
+                        return acc + (parseFloat(item.qta) * parseFloat(item.prezzo || 0));
+                    }, 0);
+                }
 
                 return `
                     <div style="background:white; padding:15px; margin-bottom:15px; border-radius:10px; border-left:8px solid var(--primary-green); box-shadow: 0 2px 8px rgba(0,0,0,0.1)">
-                        <div style="display:flex; justify-content:space-between;">
+                        <div style="display:flex; justify-content:space-between; align-items: center;">
                             <strong>${d.id}</strong>
-                            <span style="font-size:12px; background:#eee; padding:2px 5px; border-radius:4px;">${d.tipo}</span>
+                            <span style="font-size:12px; background:#eee; padding:2px 8px; border-radius:4px; font-weight:bold;">${d.tipo}</span>
                         </div>
                         
-                        <div style="margin: 5px 0;">
-                            <div style="font-weight:bold; color: #333;">${d.clienteNome}</div>
-                            <small style="color: #666;">Data: ${dataIta} | Targa: ${d.targa}</small>
-                        </div>
-                        
-                        <div style="background: #fdfdfd; padding: 8px; border-radius: 5px; border: 1px solid #eee; margin: 10px 0;">
-                            ${anteprimaArticoli}
+                        <div style="margin: 10px 0;">
+                            <div style="font-size: 13px; color: var(--primary-blue); font-weight: bold;">
+                                Cod. Cliente: ${d.clienteId}
+                            </div>
+                            <div style="font-weight:bold; color: #333; font-size: 16px; line-height: 1.2;">
+                                ${d.clienteNome}
+                            </div>
                             
-                            ${d.tipo === 'DDT' ? `
-                                <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:5px; border-top: 2px solid #ddd; font-size: 14px;">
-                                    <strong>TOTALE DOCUMENTO</strong>
-                                    <strong style="color: var(--primary-blue);">€ ${totaleDocumento.toFixed(2)}</strong>
-                                </div>
-                            ` : ''}
+                            <div style="color: #666; font-size: 13px; margin-top: 6px;">
+                                Data: <strong>${dataIta}</strong> | Targa: ${d.targa}
+                            </div>
                         </div>
 
-                        <div style="display:flex; gap:10px; margin-top:10px;">
-                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:12px; background:#f8f9fa; border:1px solid #ccc; border-radius:8px; font-weight:bold; cursor:pointer;">MODIFICA</button>
-                            <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:12px; background:var(--primary-yellow); border:none; border-radius:8px; font-weight:bold; cursor:pointer;">STAMPA</button>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef; margin: 15px 0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color: #666; font-size: 13px;">Articoli: ${d.items.length}</span>
+                                ${d.tipo === 'DDT' ? `
+                                    <strong style="color: #2c3e50; font-size: 16px;">€ ${totaleGenerale.toFixed(2)}</strong>
+                                ` : ''}
+                            </div>
+                        </div
+
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:12px; background:#fff; border:1px solid #ddd; border-radius:8px; font-weight:bold; color: #555;">MODIFICA</button>
+                            <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:12px; background:var(--primary-yellow); border:none; border-radius:8px; font-weight:bold; color: #000;">STAMPA</button>
                         </div>
                     </div>
                 `;
