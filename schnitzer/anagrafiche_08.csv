@@ -1,50 +1,347 @@
+Conversation opened. 8 messages. 8 messages unread.
+
+Skip to content
+Using Gmail with screen readers
+Enable desktop notifications for Gmail.
+   OK  No thanks
+1 of 8
+Dati.
+Inbox
+
+klaus@johannschnitzer.it
+Attachments
+Jan 12, 2026, 10:59 AM (9 days ago)
+to me
+
+ 
+
+ 
+
+ 
+
+ 2 Attachments
+  •  Scanned by Gmail
+
+Luigi <ingferranteluigi@gmail.com>
+Jan 13, 2026, 11:50 PM (8 days ago)
+to klaus
+
+Ciao Klaus
+nel file che mi hai condiviso ci sono 1398 prodotti e 4150 clienti. 
+Ovviamente l'anagrafica dei prodotti andrebbe pulita perché così rischia di essere tutto troppo lento in fase di caricamento soprattutto se la maggior parte degli articoli non sono disponibili.
+Ti invio un link con una prova grafica così possiamo poi valutare la fattibilità su un prototipo.
+https://gigiferrante.github.io/schnitzer/
+Ho lasciato intanto tutti i prodotti ma ho suddiviso l'anagrafica in 10 zone, solo per vedere intanto un possibile flusso di lavoro.
+Alla pagina di login, inserisci un nome utente qualsiasi e scegli una zona qualsiasi, ma vedrai solo i clienti della zona 00.
+Quando hai tempo, dai un'occhiata. Se vuoi, possiamo sentirci giovedì in mattinata, oppure dimmi tu quando hai tempo.
+Ti lascio il mio numero 335-1378340.
+Buona serata
+
+Luigi
+
+On Mon, Jan 12, 2026 at 10:59 AM <klaus@johannschnitzer.it> wrote:
+ 
+
+ 
+
+ 
+
+
+klaus@johannschnitzer.it
+Jan 14, 2026, 7:34 AM (7 days ago)
+to me
+
+Buongiorno Luigi,
+
+grazie per il lavoro già svolto.
+
+Per il numero di articoli potrei far passare alla cartella condivisa solo quelli prezzati, quindi sarebbero circa 250.
+
+Per i clienti, invece, potrei far passare tutti i clienti escludendo quelli della zona 00. In questo modo ne rimarrebbero 1200.
+
+Ho provato il programma sul mio cellulare, mi sembra che graficamente possa andare benissimo.
+
+Ci possiamo sentire domani in mattinata quando va bene a te.
+
+Ho visto alcune modifiche di cui potremo eventualmente parlare domani mattina:
+
+sia nei ddt che nei doc. di carico al posto della descrizione italiana visualizzare prima il codice articolo, poi la descrizione tedesca
+nei ddt visualizzare prima quantità poi il prezzo
+se possibile inserire KG o NR tra quantità e prezzo (prendendoli dall’anagrafica)
+Ci sono poi altri dettagli di cui potremo parlare sempre domani, intanto preparo una breve lista.
+
+Nel frattempo ti ringrazio e ti auguro una buona giornata
+
+ 
+
+Klaus
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: martedì 13 gennaio 2026 23:51
+A: klaus@johannschnitzer.it
+Oggetto: Re: Dati.
+
+
+Luigi <ingferranteluigi@gmail.com>
+Jan 14, 2026, 8:57 PM (7 days ago)
+to klaus
+
+Ciao Klaus, ok ottimo.
+Ho aggiornato il prototipo così valuti la parte grafica e le tempistiche di caricamento delle pagine.
+Adesso ci sono i 1200 clienti e circa 500 prodotti.
+Hai tempo domani alle 11:30?
+Bisogna poi verificare la parte di creazione di uno spazio su sharepoint per far girare l'app è il salvataggio dei dati. 
+Sarebbe da verificare se si possono far girare php (dubito però) oppure pensare alla possibilità di usare uno spazio sul sito che avete già (soluzione forse più veloce).
+Fammi sapere per domani se hai tempo, altrimenti posticipiamo.
+Buona serata
+
+Luigi
+
+klaus@johannschnitzer.it
+Jan 15, 2026, 4:43 AM (6 days ago)
+to me
+
+Buongiorno Luigi,
+
+per me a bene alle 11.30.
+
+A dopo.
+
+Klaus
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: mercoledì 14 gennaio 2026 20:58
+
+
+Luigi <ingferranteluigi@gmail.com>
+Jan 16, 2026, 3:15 PM (5 days ago)
+to klaus
+
+Ciao Klaus,
+ho aggiornato l'app con la selezione delle zone.
+Adesso l'utente inserisce nome e password e seleziona una o più sede. Nella schermata dei DDT vede le anagrafiche delle zone selezionate e può filtrarle velocemente scrivendo nella barra di ricerca.
+Puoi provare a creare un carico e un DDT così da vedere se la numerazione potrebbe andare bene.
+Buon pomeriggio e buon weekend.
+
+
+Luigi
+
+Klaus Schnitzer
+Attachments
+Jan 16, 2026, 4:49 PM (5 days ago)
+to me
+
+Ciao Luigi,
+
+ho provato l’app aggiornata, mi sembra che vada molto bene. La numerazione è ok.
+
+Posso gestire i numeratori in qualche modo?
+
+ 
+
+Di seguito ti elenco una serie di modifiche che a mio avviso ottimizzerebbero l’app.
+
+ 
+
+Ci possiamo sentire quando vuoi tu per eventuali chiarimenti dei punti elencati e per la loro fattibilità.
+
+ 
+
+ 
+
+In fase di scelta e di immissione ddt, visualizzare il codice, la ragione sociale (RASCL), la località
+Far vedere i documenti già stampati e inviati (per un’eventuale ristampa) visualizzando num. doc. / data doc. / codice cliente / importo
+Documenti di carico editabili (modifica, cancellazione, aggiunta righe) e successivamente ristampabili (tanto non vengono inviati)
+Ddt editabili solo prima della stampa
+Se possibile, nel ddt selezionabili solo articoli presenti nell’ultimo documento di carico
+Se possibile, nel doc. di carico, se valorizzato 1 campo, obbligatorio anche l’altro
+Nel ddt, campo prezzo non obbligatorio (alcuni clienti senza listino, i prezzi vengono immessi successivamente da gestionale), ma avviso se manca
+Lingua stampa articoli ddt da anagrafica clienti
+Campo prezzo: 2 decimali; campo quantità: 3 decimali
+ 
+
+In allegato ti invio un file protetto da password con le credenziali per il sito. Ti invio la pw tramite whatsapp.
+
+ 
+
+Il programmatore As400 mi ha detto che non è un problema predisporre le anagrafiche clienti divise per zona.
+
+Nel file degli articoli invece gli ho detto di filtrare solo gli articoli con un prezzo nel listino, così li puoi prendere tutti.  
+
+ 
+
+I ddt vengono accodati sempre nello stesso file finché non viene cancellato (preferibile) oppure viene effettuato un file per ogni ddt?
+
+ 
+
+Intanto grazie e buon fine settimana.
+
+ 
+
+Klaus
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: venerdì 16 gennaio 2026 15:16
+
+ One attachment
+  •  Scanned by Gmail
+Encrypted attachment warning – Be careful with this attachment. This message contains 1 encrypted attachment that can't be scanned for malicious content. Avoid downloading it unless you know the sender and are confident that this email is legitimate.
+
+Klaus Schnitzer
+Attachments
+5:21 PM (3 hours ago)
+to me
+
+Ciao Luigi,
+
+tutto bene?
+
+ 
+
+Ho fatto un po’ di pulizia tra gli archivi clienti, sono riuscito quasi a dimezzarli, inoltre le zone 10, 11 e 22 ora sono senza clienti, ma non le cancellerei.
+
+ 
+
+In allegato ti invio i file delle anagrafiche clienti suddivisi per zona ed una tabella con le targhe degli automezzi.
+
+ 
+
+Ti auguro una buona serata.
+
+ 
+
+Klaus
+
+ 
+
+ 
+
+ 
+
+ 
+
+Da: Klaus Schnitzer <klaus@johannschnitzer.it>
+Inviato: venerdì 16 gennaio 2026 16:51
+A: 'Luigi' <ingferranteluigi@gmail.com>
+Oggetto: R: Dati.
+
+ 
+
+Ciao Luigi,
+
+ho provato l’app aggiornata, mi sembra che vada molto bene. La numerazione è ok.
+
+Posso gestire i numeratori in qualche modo?
+
+ 
+
+Di seguito ti elenco una serie di modifiche che a mio avviso ottimizzerebbero l’app.
+
+ 
+
+Ci possiamo sentire quando vuoi tu per eventuali chiarimenti dei punti elencati e per la loro fattibilità.
+
+ 
+
+ 
+
+In fase di scelta e di immissione ddt, visualizzare il codice, la ragione sociale (RASCL), la località
+Far vedere i documenti già stampati e inviati (per un’eventuale ristampa) visualizzando num. doc. / data doc. / codice cliente / importo
+Documenti di carico editabili (modifica, cancellazione, aggiunta righe) e successivamente ristampabili (tanto non vengono inviati)
+Ddt editabili solo prima della stampa
+Se possibile, nel ddt selezionabili solo articoli presenti nell’ultimo documento di carico
+Se possibile, nel doc. di carico, se valorizzato 1 campo, obbligatorio anche l’altro
+Nel ddt, campo prezzo non obbligatorio (alcuni clienti senza listino, i prezzi vengono immessi successivamente da gestionale), ma avviso se manca
+Lingua stampa articoli ddt da anagrafica clienti
+Campo prezzo: 2 decimali; campo quantità: 3 decimali
+ 
+
+In allegato ti invio un file protetto da password con le credenziali per il sito. Ti invio la pw tramite whatsapp.
+
+ 
+
+Il programmatore As400 mi ha detto che non è un problema predisporre le anagrafiche clienti divise per zona.
+
+Nel file degli articoli invece gli ho detto di filtrare solo gli articoli con un prezzo nel listino, così li puoi prendere tutti.  
+
+ 
+
+I ddt vengono accodati sempre nello stesso file finché non viene cancellato (preferibile) oppure viene effettuato un file per ogni ddt?
+
+ 
+
+Intanto grazie e buon fine settimana.
+
+ 
+
+Klaus
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: venerdì 16 gennaio 2026 15:16
+
+ 10 Attachments
+  •  Scanned by Gmail
 CLDECP|CLFACP|CDAGE|RASCL|RASC2|INDCL|LOCCL|PROCL|CCAPCP|PAIVCP|CDLIN|CDLIS|TPIVA|SCONTO
 ALTERS23|ALTERS24|08|STIFTUNG PILSENHOF||KIRCHGASSE, 24|TERLAN   100020|BZ|39018|02607440217|||N|02880|
 ALTERS24|ALTERS24|08|EMPORIUM GENOSSENSCHAFT|COD: 100020|INNSBRUCKERSTRASSE, 23|BOZEN|BZ|39100|02607440217|||N||
-ANDREA|ANDREA|08|CAFE'ANDREA|D.TRAFOJER PIUS & CO.OHG|THALGUTERSTRASSE,20|ALGUND|BZ|39022|01369950215||01|N||
 ASCHBACH|ASCHBACH|08|GASTHAUS ASCHBACHERHOF OHG|DER MENGHIN ERIKA|ASCHBACH, 24|ALGUND|BZ|39022|02454210218||01|N||
-ERSCHBAM|ERSCHBAM|08|CAFE' ERSCHBAMER|EGGER PETER|GREGOR GASSER STR. 14|NALS|BZ|39010|01335360218||01|N||
-ETSCHGRU|ETSCHGRU|08|REST. ETSCHGRUND|ERB HELGA ANNA|BAHNHOFSTR. 14|BURGSTALL|BZ|39010|01129080212||01|N||
-FLORA|FLORA|08|PENSION FLORA|DES LADURNER GUNTHER KG|HUEBENWEG, 1|ALGUND|BZ|39022|01192940219||01|N||
-GERTA|GERTA01|08|CAFE' GERTA|STIMPFL TANJA|MITTERTERZERSTR. 3|MARLING|BZ|39020|02343700213||01|N||
-GERTA01|GERTA01|08|CAFE GERTA|STIMPFL TANJA|MAX VALIER STRASSE, 5-2|MARLING|BZ|39020|02343700213||01|N||
-GRUNERBA|GRUNERBA|08|GASTHOF GRUNER BAUM|INH.UNGERER REINHOLD|ROMSTRASSE,7|GARGAZON|BZ|39010|00678350216||01|N||
+FLORA|FLORA|08|PENSION FLORA|DES LADURNER GÜNTHER KG|HUEBENWEG, 1|ALGUND|BZ|39022|01192940219||01|N||
 HAPPM|HAPPM|08|IMBISS HAPPM PAPPM|ALBER KARL HEINZ|LUIS ZUEGG STRASSE, 1|LANA|BZ|39011|01636230219||01|N||
 HAPPM01|HAPPM01|08|HAPPM PAPPM LANA|ALBER MICHAEL|SCHNATTERPECKSTRASSE, 22|LANA|BZ|39011|03062730217||01|N||
-HELISA01|HELISA01|08|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
-HGERHA01|HGERHA01|08|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
 HIRSCH02|HIRSCH02|08|REST. ZUM HIRSCHEN|FONTANA MICHAEL|NALSERSTRASSE, 22|VILPIAN|BZ|39018|02999720218||01|N||
-HJAGDH01|HJAGDH01|08|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212||01|N||
+HJAGDH01|HJAGDH01|08|HOGAST ITALIEN EINKAUFSGEN.|FÜR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212||01|N||
 HJAGDHOF|HJAGDH01|08|GIARDINO MARLING GMBH|KLAMMER ULRIKE|ST.FELIXWEG, 18|MARLING|BZ|39020|01342330212||02|N||
-HLAMAJ01|HLAMAJ01|08|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212||01|N||
-HLAMAJE|HLAMAJ01|08|LA MAIENA MERAN RESORT|WALDNER GMBH|NORDERSTRASSE, 15|MARLING|BZ|39020|01342330212||02|N||
-HMARLE02|HMARLE02|08|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212||01|N||
-HMARLENA|HMARLE02|08|HOTEL MARLENA GMBH|INDERST JOHANN|NORDERSTRASSE, 6|MARLING|BZ|39020|01342330212||03|N||
-HWESSO01|HWESSO01|08|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
-HWESSOBR|HWESSO01|08|HOTEL WESSOBRUNN|D. GUNTHER MAIR|LAURINSTRASSE, 99|MERAN|BZ|39012|01342330212||02|N||
-HWIESE01|HWIESE01|08|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
-HWIESENH|HWIESE01|08|HOTEL WIESENHOF GMBH|FAM. SCHROTTER|J. WEINGARTNERSTR. 16|ALGUND|BZ|39022|01342330212||03|N||
-KIENZL01|KIENZL01|08|KIENZL KG|KIENZL HINTEREGGER A.& CO.|ALTE LANDSTRASSE,38|ALGUND|BZ|39022|01047360217||03|N||
-LADURN|LADURN|08|PIZZERIA LADURN|LADURNER MARKUS|NORDERSTRASSE, 21|MARLING|BZ|39020|02622580211||01|N||
-LANDESFE|LANDESFE|08|LANDESFEUERWEHRSCHULE|SUDTIROL|BRAUEREISTRASSE, 18|VILPIAN|BZ|39010|01341170213|||N|02200|
+HLAMAJ01|HLAMAJ01|08|HOGAST ITALIEN EINKAUFSGEN.|FÜR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212||01|N||
+HLAMAJE|HLAMAJ01|08|LA MAIENA MERAN RESORT|WALDNER GMBH|NÖRDERSTRASSE, 15|MARLING|BZ|39020|01342330212||02|N||
+HMARLE02|HMARLE02|08|HOGAST ITALIEN EINKAUFSGEN.|FÜR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212||01|N||
+HMARLENA|HMARLE02|08|HOTEL MARLENA GMBH|INDERST JOHANN|NÖRDERSTRASSE, 6|MARLING|BZ|39020|01342330212||03|N||
+HWESSO01|HWESSO01|08|HOGAST ITALIEN EINKAUFSGEN.|FÜR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
+HWESSOBR|HWESSO01|08|HOTEL WESSOBRUNN|D. GÜNTHER MAIR|LAURINSTRASSE, 99|MERAN|BZ|39012|01342330212||02|N||
+LADURN|LADURN|08|PIZZERIA LADURN|LADURNER MARKUS|NÖRDERSTRASSE, 21|MARLING|BZ|39020|02622580211||01|N||
+LANDESFE|LANDESFE|08|LANDESFEUERWEHRSCHULE|SÜDTIROL|BRAUEREISTRASSE, 18|VILPIAN|BZ|39010|01341170213|||N|02200|
 LICHTENB|LICHTENB|08|BILDUNGSHAUS LICHTENBURG|STIFTUNG ST. ELISABETH|VILPIANERSTRASSE, 27|NALS|BZ|39010|02651810216||01|N||
-LIDONALS|LIDONA01|08|SPORT BAR LIDO  NALS|GASSER FLORIAN|GOLDGASSE, 4|NALS|BZ|39010|02911690218||01|N||
 MAIR01|MAIR01|08|METZGEREI & FEINKOST MAIR|DES HANNES MAIR & CO. KG|HAUPTSTRASSE, 9|TERLAN|BZ|39018|01069720215||01|N||
-MEBO|MEBO|08|MEBO STOP & GO|BRUNNER STEFAN & CO. KG|NALSERSTRASSE, 28|VILPIAN/TERLAN|BZ|39018|02606240212||01|N||
 MEINBE03|MEINBE04|08|FILIALE NALS MEIN BECK GMBH||WEINSTRASSE, 41|NALS|BZ|39010|02742930213||01|N||
 MEINBE04|MEINBE04|08|MEIN BECK GMBH||ZOLLSTRASSE, 5|NALS|BZ|39010|02742930213||01|N||
-MEINBE05|MEINBE05|08|MEIN BECK INVEST KG OGGL MANFRED|& CO. - MITARBEITERKUCHE|WEINSTRASSE, 41|NALS|BZ|39010|01710570217||01|N||
-MEINBECK|MEINBECK|08|BACKEREI MEIN BECK|OGGL MANFRED & CO. KG|ZOLLSTRASSE, 5|NALS|BZ|39010|01710570217||01|N||
-MENZ|MENZ|08|CENTER MARKET|DES FELIX LANPACHER|KIRCHPLATZ,2|MARLING|BZ|39020|03180920211||01|N||
+MEINBE05|MEINBE05|08|MEIN BECK INVEST KG ÖGGL MANFRED|& CO. - MITARBEITERKÜCHE|WEINSTRASSE, 41|NALS|BZ|39010|01710570217||01|N||
+MEINBECK|MEINBECK|08|BÄCKEREI MEIN BECK|ÖGGL MANFRED & CO. KG|ZOLLSTRASSE, 5|NALS|BZ|39010|01710570217||01|N||
 NATURBAR|NATURBAR|08|NATURBAR TENNIS|GUERCIO ORIETTA|BAHNHOFSTRASSE, 35|GARGAZON|BZ|39010|02704710215||01|N||
 NIGG|NIGG|08|METZGEREI NIGG STEFAN & CO. KG||KARL ATZ PLATZ, 3|TERLAN|BZ|39018|01190050219||01|N||
-ORCHIDEA|ORCHIDEA|08|ORCHIDEA|DER EGGER RENATE|REICHSTRASSE, 26|GARGAZON|BZ|39010|02910470216||01|N||
-PALLWEBE|PALLWEBE|08|PALLWEBER GMBH||GOLDGASSE, 2|NALS|BZ|39010|00538210212||01|N||
 PAPOLL01|PAPOLL01|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PAPOLLON|PAPOLL01|08|APOLLONIA KG|GEISER THOMAS & CO.|ST. APOLLONIAWEG, 3|NALS SIRMIAN|BZ|39010|02616790214||02|N||
-PFOSTL|PFOSTL|08|METZGEREI VON PFOSTL|DES FLORIAN PIRCHER|ALTE LANDSTRASSE, 33 A|ALGUND|BZ|39022|03183690217||01|N||
-PFOSTLST|PFOSTLST|08|PFOSTLSTUBE|DANIEL CREPAZ|ALTE LANDSTRASSE, 33 A|ALGUND|BZ|39022|03017430210||01|N||
-PJAGER|PJAGER03|08|GASTHOF JAGER|MAIR ANGELIKA|ST. APOLLONIA, 5|OBERSIRMIAN-NALS|BZ|39010|02616790214||02|N||
+PJAGER|PJAGER03|08|GASTHOF JÄGER|MAIR ANGELIKA|ST. APOLLONIA, 5|OBERSIRMIAN-NALS|BZ|39010|02616790214||02|N||
 PJAGER03|PJAGER03|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PMEHRH01|PMEHRH01|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PMEHRHAU|PMEHRH01|08|HOTEL MEHRHAUSER|MEHRHAUSER GERDA|GOLDGASSE, 16|NALS|BZ|39010|02616790214||02|N||
@@ -54,8 +351,8 @@ PPUNTH01|PPUNTH01|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ
 PPUNTHOF|PPUNTH01|08|ANSITZ PUENTHOF|DES WOLF ALEX|STEINACHSTR. 25|ALGUND|BZ|39022|02616790214||02|N||
 PSANDL01|PSANDL01|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PSANDLST|PSANDL01|08|SANDLSTUEBELE|DES WINDEGGER THOMAS & CO. KG|ST. VIGILSTRASSE, 7|NALS|BZ|39010|02616790214||02|N||
-PSENNE07|PSENNE08|08|BACKEREI KONDITOREI TERLAN||DR. WEISER PLATZ, 7|TERLAN|BZ|39027|00740950217||01|N||
-PSENNE08|PSENNE08|08|BACKEREI KONDITOREI PSENNER GMBH||HAUPTSTRASSE, 63|NATURNS|BZ|39025|00740950217||01|N||
+PSENNE07|PSENNE08|08|BÄCKEREI KONDITOREI TERLAN||DR. WEISER PLATZ, 7|TERLAN|BZ|39027|00740950217||01|N||
+PSENNE08|PSENNE08|08|BÄCKEREI KONDITOREI PSENNER GMBH||HAUPTSTRASSE, 63|NATURNS|BZ|39025|00740950217||01|N||
 PSONNE05|PSONNE05|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PSONNENH|PSONNE05|08|HOTEL SONNENHOF|D. HELLRIGL WOLFGANG|ANSELM-PATTIS STRASSE, 13|MARLING|BZ|39020|02616790214||02|N||
 PVILPI01|PVILPI01|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
@@ -63,7 +360,6 @@ PVILPIAN|PVILPI01|08|VILPIANERHOF|ELISABETH VISINTAINER & CO. KG|NALSERSTRASSE, 
 PWALDS01|PWALDS01|08|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PWALDSCH|PWALDS01|08|HOTEL GASTHOF WALDSCHENKE|WINKLER ALOIS|ST. FELIXWEG, 11|MARLING|BZ|39020|02616790214||02|N||
 ROSEMARI|ROSEMARI|08|GASTHOF ROSEMARIE|KUNTNER CHRISTOF & CO.KG|GAMPENSTR. 57|MARLING|BZ|39020|02784060218||01|N||
-SCHWAR08|SCHWAR08|08|SCHWARZ THOMAS||ROMSTRASSE, 12|GARGAZON|BZ|39010|01717240210||01|N||
 SENNAMEG|SENNAMEG|08|GASTHAUS SENN AM EGG|GUFLER MICHAEL|ST. FELIXWEG, 21|MARLING|BZ|39020|02619940212||01|N||
 STACHE01|STACHE01|08|ANSITZ STACHELBURG|D.ELFRIEDE & MARLENE DALLACORTE OHG|PRISSIANERSTRASSE, 2|NALS|BZ|39010|00715010211||01|N||
 STEINA01|STEINA01|08|CAFE' KONDITOREI STEINACH|PRANTL HARALD & CO. KG|STEINACHSTRASSE, 35|ALGUND|BZ|39022|03097940211||03|N||

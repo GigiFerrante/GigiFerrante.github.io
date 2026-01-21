@@ -1,80 +1,354 @@
+Conversation opened. 8 messages. 8 messages unread.
+
+Skip to content
+Using Gmail with screen readers
+Enable desktop notifications for Gmail.
+   OK  No thanks
+1 of 8
+Dati.
+Inbox
+
+klaus@johannschnitzer.it
+Attachments
+Jan 12, 2026, 10:59 AM (9 days ago)
+to me
+
+ 
+
+ 
+
+ 
+
+ 2 Attachments
+  •  Scanned by Gmail
+
+Luigi <ingferranteluigi@gmail.com>
+Jan 13, 2026, 11:50 PM (8 days ago)
+to klaus
+
+Ciao Klaus
+nel file che mi hai condiviso ci sono 1398 prodotti e 4150 clienti. 
+Ovviamente l'anagrafica dei prodotti andrebbe pulita perché così rischia di essere tutto troppo lento in fase di caricamento soprattutto se la maggior parte degli articoli non sono disponibili.
+Ti invio un link con una prova grafica così possiamo poi valutare la fattibilità su un prototipo.
+https://gigiferrante.github.io/schnitzer/
+Ho lasciato intanto tutti i prodotti ma ho suddiviso l'anagrafica in 10 zone, solo per vedere intanto un possibile flusso di lavoro.
+Alla pagina di login, inserisci un nome utente qualsiasi e scegli una zona qualsiasi, ma vedrai solo i clienti della zona 00.
+Quando hai tempo, dai un'occhiata. Se vuoi, possiamo sentirci giovedì in mattinata, oppure dimmi tu quando hai tempo.
+Ti lascio il mio numero 335-1378340.
+Buona serata
+
+Luigi
+
+On Mon, Jan 12, 2026 at 10:59 AM <klaus@johannschnitzer.it> wrote:
+ 
+
+ 
+
+ 
+
+
+klaus@johannschnitzer.it
+Jan 14, 2026, 7:34 AM (7 days ago)
+to me
+
+Buongiorno Luigi,
+
+grazie per il lavoro già svolto.
+
+Per il numero di articoli potrei far passare alla cartella condivisa solo quelli prezzati, quindi sarebbero circa 250.
+
+Per i clienti, invece, potrei far passare tutti i clienti escludendo quelli della zona 00. In questo modo ne rimarrebbero 1200.
+
+Ho provato il programma sul mio cellulare, mi sembra che graficamente possa andare benissimo.
+
+Ci possiamo sentire domani in mattinata quando va bene a te.
+
+Ho visto alcune modifiche di cui potremo eventualmente parlare domani mattina:
+
+sia nei ddt che nei doc. di carico al posto della descrizione italiana visualizzare prima il codice articolo, poi la descrizione tedesca
+nei ddt visualizzare prima quantità poi il prezzo
+se possibile inserire KG o NR tra quantità e prezzo (prendendoli dall’anagrafica)
+Ci sono poi altri dettagli di cui potremo parlare sempre domani, intanto preparo una breve lista.
+
+Nel frattempo ti ringrazio e ti auguro una buona giornata
+
+ 
+
+Klaus
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: martedì 13 gennaio 2026 23:51
+A: klaus@johannschnitzer.it
+Oggetto: Re: Dati.
+
+
+Luigi <ingferranteluigi@gmail.com>
+Jan 14, 2026, 8:57 PM (7 days ago)
+to klaus
+
+Ciao Klaus, ok ottimo.
+Ho aggiornato il prototipo così valuti la parte grafica e le tempistiche di caricamento delle pagine.
+Adesso ci sono i 1200 clienti e circa 500 prodotti.
+Hai tempo domani alle 11:30?
+Bisogna poi verificare la parte di creazione di uno spazio su sharepoint per far girare l'app è il salvataggio dei dati. 
+Sarebbe da verificare se si possono far girare php (dubito però) oppure pensare alla possibilità di usare uno spazio sul sito che avete già (soluzione forse più veloce).
+Fammi sapere per domani se hai tempo, altrimenti posticipiamo.
+Buona serata
+
+Luigi
+
+klaus@johannschnitzer.it
+Jan 15, 2026, 4:43 AM (6 days ago)
+to me
+
+Buongiorno Luigi,
+
+per me a bene alle 11.30.
+
+A dopo.
+
+Klaus
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: mercoledì 14 gennaio 2026 20:58
+
+
+Luigi <ingferranteluigi@gmail.com>
+Jan 16, 2026, 3:15 PM (5 days ago)
+to klaus
+
+Ciao Klaus,
+ho aggiornato l'app con la selezione delle zone.
+Adesso l'utente inserisce nome e password e seleziona una o più sede. Nella schermata dei DDT vede le anagrafiche delle zone selezionate e può filtrarle velocemente scrivendo nella barra di ricerca.
+Puoi provare a creare un carico e un DDT così da vedere se la numerazione potrebbe andare bene.
+Buon pomeriggio e buon weekend.
+
+
+Luigi
+
+Klaus Schnitzer
+Attachments
+Jan 16, 2026, 4:49 PM (5 days ago)
+to me
+
+Ciao Luigi,
+
+ho provato l’app aggiornata, mi sembra che vada molto bene. La numerazione è ok.
+
+Posso gestire i numeratori in qualche modo?
+
+ 
+
+Di seguito ti elenco una serie di modifiche che a mio avviso ottimizzerebbero l’app.
+
+ 
+
+Ci possiamo sentire quando vuoi tu per eventuali chiarimenti dei punti elencati e per la loro fattibilità.
+
+ 
+
+ 
+
+In fase di scelta e di immissione ddt, visualizzare il codice, la ragione sociale (RASCL), la località
+Far vedere i documenti già stampati e inviati (per un’eventuale ristampa) visualizzando num. doc. / data doc. / codice cliente / importo
+Documenti di carico editabili (modifica, cancellazione, aggiunta righe) e successivamente ristampabili (tanto non vengono inviati)
+Ddt editabili solo prima della stampa
+Se possibile, nel ddt selezionabili solo articoli presenti nell’ultimo documento di carico
+Se possibile, nel doc. di carico, se valorizzato 1 campo, obbligatorio anche l’altro
+Nel ddt, campo prezzo non obbligatorio (alcuni clienti senza listino, i prezzi vengono immessi successivamente da gestionale), ma avviso se manca
+Lingua stampa articoli ddt da anagrafica clienti
+Campo prezzo: 2 decimali; campo quantità: 3 decimali
+ 
+
+In allegato ti invio un file protetto da password con le credenziali per il sito. Ti invio la pw tramite whatsapp.
+
+ 
+
+Il programmatore As400 mi ha detto che non è un problema predisporre le anagrafiche clienti divise per zona.
+
+Nel file degli articoli invece gli ho detto di filtrare solo gli articoli con un prezzo nel listino, così li puoi prendere tutti.  
+
+ 
+
+I ddt vengono accodati sempre nello stesso file finché non viene cancellato (preferibile) oppure viene effettuato un file per ogni ddt?
+
+ 
+
+Intanto grazie e buon fine settimana.
+
+ 
+
+Klaus
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: venerdì 16 gennaio 2026 15:16
+
+ One attachment
+  •  Scanned by Gmail
+Encrypted attachment warning – Be careful with this attachment. This message contains 1 encrypted attachment that can't be scanned for malicious content. Avoid downloading it unless you know the sender and are confident that this email is legitimate.
+
+Klaus Schnitzer
+Attachments
+5:21 PM (3 hours ago)
+to me
+
+Ciao Luigi,
+
+tutto bene?
+
+ 
+
+Ho fatto un po’ di pulizia tra gli archivi clienti, sono riuscito quasi a dimezzarli, inoltre le zone 10, 11 e 22 ora sono senza clienti, ma non le cancellerei.
+
+ 
+
+In allegato ti invio i file delle anagrafiche clienti suddivisi per zona ed una tabella con le targhe degli automezzi.
+
+ 
+
+Ti auguro una buona serata.
+
+ 
+
+Klaus
+
+ 
+
+ 
+
+ 
+
+ 
+
+Da: Klaus Schnitzer <klaus@johannschnitzer.it>
+Inviato: venerdì 16 gennaio 2026 16:51
+A: 'Luigi' <ingferranteluigi@gmail.com>
+Oggetto: R: Dati.
+
+ 
+
+Ciao Luigi,
+
+ho provato l’app aggiornata, mi sembra che vada molto bene. La numerazione è ok.
+
+Posso gestire i numeratori in qualche modo?
+
+ 
+
+Di seguito ti elenco una serie di modifiche che a mio avviso ottimizzerebbero l’app.
+
+ 
+
+Ci possiamo sentire quando vuoi tu per eventuali chiarimenti dei punti elencati e per la loro fattibilità.
+
+ 
+
+ 
+
+In fase di scelta e di immissione ddt, visualizzare il codice, la ragione sociale (RASCL), la località
+Far vedere i documenti già stampati e inviati (per un’eventuale ristampa) visualizzando num. doc. / data doc. / codice cliente / importo
+Documenti di carico editabili (modifica, cancellazione, aggiunta righe) e successivamente ristampabili (tanto non vengono inviati)
+Ddt editabili solo prima della stampa
+Se possibile, nel ddt selezionabili solo articoli presenti nell’ultimo documento di carico
+Se possibile, nel doc. di carico, se valorizzato 1 campo, obbligatorio anche l’altro
+Nel ddt, campo prezzo non obbligatorio (alcuni clienti senza listino, i prezzi vengono immessi successivamente da gestionale), ma avviso se manca
+Lingua stampa articoli ddt da anagrafica clienti
+Campo prezzo: 2 decimali; campo quantità: 3 decimali
+ 
+
+In allegato ti invio un file protetto da password con le credenziali per il sito. Ti invio la pw tramite whatsapp.
+
+ 
+
+Il programmatore As400 mi ha detto che non è un problema predisporre le anagrafiche clienti divise per zona.
+
+Nel file degli articoli invece gli ho detto di filtrare solo gli articoli con un prezzo nel listino, così li puoi prendere tutti.  
+
+ 
+
+I ddt vengono accodati sempre nello stesso file finché non viene cancellato (preferibile) oppure viene effettuato un file per ogni ddt?
+
+ 
+
+Intanto grazie e buon fine settimana.
+
+ 
+
+Klaus
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+Da: Luigi <ingferranteluigi@gmail.com>
+Inviato: venerdì 16 gennaio 2026 15:16
+
+ 10 Attachments
+  •  Scanned by Gmail
 CLDECP|CLFACP|CDAGE|RASCL|RASC2|INDCL|LOCCL|PROCL|CCAPCP|PAIVCP|CDLIN|CDLIS|TPIVA|SCONTO
-ALTEPOST|ALTEPOST|07|BAR ALTE POST|CABRERA SNC|HAUPTSTRASSE, 98/C|PRAD AM STILFSERJ.|BZ|39026|02649490212||01|N||
 AMTEICH|AMTEICH|07|RESTAURANT AM TEICH VGMBH||KIEFERHAINWEG, 115|PRAD AM STILFSTRJOCH|BZ|39026|03142990211||01|N||
 AVINGA|AVINGA|07|GASTHOF AVINGA|CHRISTANDL HUGO|ST.JOHANNSTRASSE,78|TAUFERS|BZ|39020|01104180219||01|N||
-BAYER|BAYER|07|BAYER GERLINDE|WURSTELSTAND|FALATSCHWEG, 2|GLURNS|BZ|39020|01717230211||01|N||
-BEZIRK01|BEZIRK01|07|BEZIRKSGEMEINSCHAFT VINSCHGAU|DIREKTION SOZIALDIENSTE|HAUPTSTRASSE, 134 SCHLANDERS|CIG: Z3401F0616|BZ|39028|01340850211|||N|02050|
-BRUCKE|BRUCKE|07|RESTAURANT ZUR BRUCKE|PETIJA DENIS|LAATSCH, 25|MALS|BZ|39024|02777270212||01|N||
 CALVA|CALVA|07|CALVA VGMBH||LAATSCH, 140|MALS|BZ|39024|03059020218||01|N||
-CAVALL01|CAVALL01|07|TSCHENETT BERNHARD & CO. SAS||VIA PETER MITTERHOFER,1|PARCINES|BZ|39020|01706600218|1|01|N||
-CAVALLIN|CAVALL01|07|HOTEL CAVALLINO BIANCO||VIA MERCATO, 8 - MONTECHIARO|PRATO ALLO STELVIO|BZ|39026|01706600218|1|01|N||
 CHAVALAT|CHAVALAT|07|PENSION CHAVALATSCH|GARAVAGNO LUCAS|ST. JOHANNSTR. 31|TAUFERS I.M.|BZ|39020|02378810218||01|N||
-DURREN|DURREN|07|REST. DURREN AST|ZOSCHG IDA|VELLNAIER, 6/A|PRAD|BZ|39026|00854890217||01|N||
-EDELWE05|EDELWE05|07|HOTEL RESTAURANT EDELWEISS|D. LAUB PETRA|VINSCHGAUERSTRASSE, 9|EYRS/LAAS|BZ|39023|02597690219||01|N||
-ERIKA01|ERIKA01|07|PIZZ. REST. ERIKA|SACHSALBER PETER & CO. OHG|FLORASTRASSE, 39|GLURNS|BZ|39020|02544010214||01|N||
 EUROBAR|EUROBAR|07|EUROBAR|DI PRIETH MARGHERITA & C. SAS|KREUZWEG, 2/H|PRATO ALLO STELVIO|BZ|39026|02334870215|1|01|N||
 FLURIN|FLURIN|07|FLURIN GMBH||LAUBENGASSE, 2|GLURNS|BZ|39020|02986250211||01|N||
-GANDER|GANDER|07|BACKEREI-KONDITOREI GANDER|BURGER RENATE|ST. ANTONWEG, 38/A|PRAD|BZ|39026|03320990215||01|N||
+GANDER|GANDER|07|BÄCKEREI-KONDITOREI GANDER|BURGER RENATE|ST. ANTONWEG, 38/A|PRAD|BZ|39026|03320990215||01|N||
 GEORG|GEORG|07|GASTHOF ST.GEORG|KOBLER E.& ANGERER W.OHG|AGUMS 36A|PRAD A.STILFSERJOCH|BZ|39026|00603360215||01|N||
-GLORIAVA|GLORIAVA|07|GLORIA VALLIS GMBH|D. STEFAN LANGERER|WIESENWEG, 5|GLURNS|BZ|39020|02987020217||01|N||
-GLURNSER|GLURNSER|07|GLURNSERHOF|ANGERER KURT|B.J. GRASSERSTR. 4|GLURNS|BZ|39020|02293610214||01|N||
+GLORIAVA|GLORIAVA|07|GLORIA VALLIS GMBH|D. STEFAN LÄNGERER|WIESENWEG, 5|GLURNS|BZ|39020|02987020217||01|N||
 GRUBER02|GRUBER02|07|GRUBER CHRISTIAN & CO KG||KREUZWEG, 15|PRAD|BZ|39026|00858840218||01|N||
-HAUSER|HAUSER|07|HAUSER MAX & CO. KG|WARENHAUS|TSCHENGLS, 101|TSCHENGLS|BZ|39020|01515500211||01|N||
-HGARDE01|HGARDE01|07|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
+HGARDE01|HGARDE01|07|HOGAST ITALIEN EINKAUFSGEN.|FÜR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
 HGARDEN|HGARDE01|07|GARDEN PARK HOTEL|ZENTRAL GMBH|HAUPTSTRASSE, 48|PRAD AM STILFSERJOCH|BZ|39026|01342330212||03|N||
 HLAMM|HLAMM01|07|NATUR AKTIV HOTEL LAMM|STEINER ANDREAS & CO KG|ST. JOHANN STRASSE, 37|TAUFERS IM MUENSTERTAL|BZ|39020|01342330212||02|N||
-HLAMM01|HLAMM01|07|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
-HZENTR01|HZENTR01|07|HOGAST ITALIEN EINKAUFSGEN.|FUR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
+HLAMM01|HLAMM01|07|HOGAST ITALIEN EINKAUFSGEN.|FÜR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
+HZENTR01|HZENTR01|07|HOGAST ITALIEN EINKAUFSGEN.|FÜR DAS HOTEL- UND GASTGEWERBE|SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|01342330212|||N||
 HZENTRAL|HZENTR01|07|ZENTRAL GMBH||HAUPTSTRASSE, 100|PRAD AM STILFSERJOCH|BZ|39026|01342330212||03|N||
-IRENE01|IRENE01|07|PIZZETTERIA IRENE|ZANAGLIA IRENE|VIDUMPLATZ, 1|GLURNS|BZ|39020|02351870213||01|N||
-KINDER02|KINDER02|07|GEMEINDE PRAD KINDERGARTEN||KREUZGASSE, 3|PRAD|BZ|39026|00575500210||01|N||
-KINDER16|KINDER16|07|GEMEINDE GLURNS KINDERGARTEN||FLORASTRASSE,19|GLURNS|BZ|39020|00432110211||01|N||
 KINDER24|KINDER24|07|KINDERGARTEN TAUFERS|GEMEINDE TAUFERS I.M.|ST.JOHANNSTRASSE, 26|TAUFERS I.M.|BZ|39020|00414320218||01|N|00850|
-KINDER56|KINDER56|07|KINDERGARTEN LICHTENBERG|GEMEINDE PRAD|KREUZGASSE, 3|PRAD|BZ|39026|00575500210||01|N||
-KOCH|KOCH|07|GEMISCHTWAREN KOCH|KOCH JOHANNA MARIA|ST.JOHANNSTRASSE,50/A|TAUFERS IM MUNSTER|BZ|39020|00175460211||01|N||
-KOFLER06|KOFLER06|07|DESPAR KOFLER KURT||VINSCHGAUERSTRASSE, 8|LAAS|BZ|39023|02469640219||01|N||
-KRONE01|KRONE01|07|HOTEL KRONE OHG|RAINIS NADJA & CHRISTANDL ALBERT|STADTPLATZ, 9|GLURNS|BZ|39020|02442770216||01|N||
-LAMM05|LAMM05|07|WALLNOFER KG - GASTHAUS LAMM|D. WALLNOFER OSWALD & CO.|LAATSCH, 72|MALS|BZ|39024|01473770210||01|N||
+LAMM05|LAMM05|07|WALLNÖFER KG - GASTHAUS LAMM|D. WALLNÖFER OSWALD & CO.|LAATSCH, 72|MALS|BZ|39024|01473770210||01|N||
 LIDOPRAD|LIDOPRAD|07|EVENT MANAGEMENT DES|MANUEL RUEPP|KIEFERNHAINWEG, 9A|PRAD|BZ|39026|03205540218||01|N||
-LINDE02|LINDE02|07|BAR LINDE|WUNDERER K. THEINER K.OHG|ST. ANTONWEG, 10|PRAD|BZ|39026|01718320219||01|N||
 MAIR02|MAIR02|07|METZGEREI MAIR|KUENRATH ROLAND & CO. OHG|FLORASTRASSE, 32|GLURNS|BZ|39020|00591620216||01|N||
-MARY|MARY|07|MARY'S MARKET|DER THEINER MARIA|KORTSCH 283/A|SCHLANDERS|BZ|39028|02458690217||01|N||
-MONTAN01|MONTAN01|07|BAR MONTANA KG|GANDER PHILIPP & CO.|ST.ANTONWEG, 38/A|PRAD AM STILFSERJOCH|BZ|39026|00745960211||01|N||
-MUHLRADL|MUHLRADL|07|BAR CAFE' PUB MUHLRADL|FLORINETH CHRISTOF & CO.OHG|LAATSCH, 73 B|MALS|BZ|39024|02215800216||01|N||
-MUSIKK07|MUSIKK07|07|MUSIKKAPELLE DER STADT GLURNS|Z.H. PATRICK WALLNOFER|SILBERGASSE|GLURNS|BZ|39020|82026950210||01|N||
-NEUEPOST|NEUEPOST|07|NEUE POST|PIRCHER PETRA|HAUPTSTRASSE, 36|PRAD AM STILFSERJOCH|BZ|39026|03183190218||01|N||
 OBERESTI|OBERESTI|07|OBERE STILFSER ALM|GRUBER TABEA|KREUZWEG, 15|PRAD AM STILFSERJOCH|BZ|39026|03119810210||01|N||
-ORTLER04|ORTLER04|07|RESTAURANT BAR ORTLER|PICHLER OSWALD & CO. KG|GLURNERSTR. 2|SCHLUDERNS|BZ|39020|02203290214||01|N||
-PBELVE03|PBELVE03|07|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
-PBELVENU|PBELVE03|07|BELVENU BOUTIQUE HOTEL|BACHMAYER GMBH|STADTPLATZ, 7|GLURNS|BZ|39020|02616790214||02|N||
-PCAMPI04|PCAMPI05|07|CAMPING SAGEMUHLE GMBH|ALBERT KARIN KATHERINA|DORNWEG, 12|PRAD AM STILFSERJOCH|BZ|39026|02616790214||02|N||
+PCAMPI04|PCAMPI05|07|CAMPING SÄGEMÜHLE GMBH|ALBERT KARIN KATHERINA|DORNWEG, 12|PRAD AM STILFSERJOCH|BZ|39026|02616790214||02|N||
 PCAMPI05|PCAMPI05|07|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PGRUNE01|PGRUNE01|07|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
 PGRUNERB|PGRUNE01|07|GASTHOF GRUENER BAUM|BACHMAYER GMBH|STADTPLATZ, 7|GLURNS|BZ|39020|02616790214||02|N||
 PMARKE01|PMARKE01|07|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
-PMARKET|PMARKE01|07|MARKET CAMPING SAGEMUHLE GMBH|ALBERT KARIN KATHERINA|DORNWEG, 12|PRAD AM STILFSERJOCH|BZ|39026|02616790214||02|N||
+PMARKET|PMARKE01|07|MARKET CAMPING SÄGEMÜHLE GMBH|ALBERT KARIN KATHERINA|DORNWEG, 12|PRAD AM STILFSERJOCH|BZ|39026|02616790214||02|N||
 POST01|POST01|07|HOTEL POST KG|D.KARNER E.& CO.|FLORASTRASSE,15|GLURNS|BZ|39020|01187950215||01|N||
-POSTHI01|POSTHI01|07|ZION REISEN KG|DES GURSCHLER ERWIN & CO.|SANDWEG, 14|PRAD AM STILFSERJOCH|BZ|39026|02808490219||01|N||
-POSTHIRS|POSTHI01|07|HOTEL POST HIRSCH|ZION REISEN KG|SPONDINIG, 7|SCHLUDERNS|BZ|39020|02808490219||01|N||
 PRESTA01|PRESTA01|07|GASTRO-POOL ITALIEN GMBH||SCHLACHTHOFSTRASSE, 53-B|BOZEN|BZ|39100|02616790214||02|N||
-PRESTAUR|PRESTA01|07|RESTAURANT CAMPING SAGEMUHLE GMBH|ALBERT KARIN KATHERINA|DORNWEG, 12|PRAD AM STILFSERJOCH|BZ|39026|02616790214||02|N||
-RENATE|RENATE|07|REST.PIZZERIA RENATE|NIEDEREG.GALASCH & CO OHG|FLORASTRASSE, 39|GLURNS|BZ|39020|01608480214||01|N||
-RENNERCL|RENNERCL|07|RENNERCLUB VINSCHGAU||HAUPTSTRASSE, 22|GRAUN|BZ|39027|01736890219||01|N||
+PRESTAUR|PRESTA01|07|RESTAURANT CAMPING SÄGEMÜHLE GMBH|ALBERT KARIN KATHERINA|DORNWEG, 12|PRAD AM STILFSERJOCH|BZ|39026|02616790214||02|N||
 RUNGG01|RUNGG06|07|FRISCHECENTER RUNGG PRAD||KREUZGASSE, 2/B|PRAD AM STILFSERJOCH|BZ|39026|00738950211||01|N||
 RUNGG06|RUNGG06|07|MARKET RUNGG GMBH||HAUPTSTRASSE, 71|PRAD AM STILFSERJOCH|BZ|39026|00738950211||01|N||
 SANDHEIM|SANDHEIM|07|PIZZ. REST. SANDHEIM|DAGMAR DES MAYR MARKUS & CO. KG|ST. ANTONWEG, 53|PRAD AM STILFSERJOCH|BZ|39026|03184640211||01|N||
-SAURER|SAURER|07|BACKEREI KONDITOREI SAURER|DES KLAUS SAURER & CO. OHG|HAUPTSTRASSE, 59|PRAD A. STILFSERJOCH|BZ|39026|00738270214||01|N||
 SCHUST04|SCHUST04|07|SCHUSTER GMBH||LAATSCH,139|MALS|BZ|39024|00638530212||03|N||
-SISINIUS|SISINIUS|07|ST. SISINIUS PIZZERIA & SCHWIMMBAD|HAUSER WALTER|MARMORSTRASSE, 5/B|LAAS|BZ|39023|03034510218||01|N||
-SPORTCLU|SPORTCLU|07|SPORTCLUB GLURNS||LAUBEN,26|GLURNS|BZ|39020|00670250216||01|N||
 STADTC01|STADTC01|07|STADTCAFE'|MICHAELA DURICOVA|FLORASTRASSE, 18|GLURNS|BZ|39020|03146760214||01|N||
 STEINBOC|STEINBOC|07|RESTAURANT STEINBOCK|FLURIN GMBH|FLORASTRASSE, 9|GLURNS|BZ|39020|02986250211||01|N||
-STERN|STERN|07|GASTHOF STERN OHG|NIGG JOSEF|SILBERSTRASSE, 1|PRAD|BZ|39026|02272250214||01|N||
-TANNEN01|TANNEN00|07|TRAFOUR VGMBG|HOTEL TANNENHEIM|TRAFOI 2|STILFS|BZ|39020|02914690215||02|N|00200|
-TOURIS05|TOURIS05|07|TOURISMUSVEREIN PRAD||KREUZWEG, 4 C|PRAD AM STILFSERJOCH|BZ|39026|02807130212||01|N||
-WALLNO01|WALLNO01|07|WALLNOFER ROSMARIE & CO. OHG|OBST-GEMUSE-BLUMEN|HAUPTSTRASSE,59|PRAD|BZ|39026|00857530216||01|N||
-WALLNO02|WALLNO02|07|WALLNOFER KG - DORFLADEN|D. WALLNOFER OSWALD & CO.|LAATSCH, 72|MALS|BZ|39024|01473770210||01|N||
-WEISSE11|WEISSE11|07|GASTHOF WEISSES KREUZ|WALDNER DIETRICH|MALSERSTRASSE|GLURNS|BZ|39020|02927040218||01|N||
+WALLNO02|WALLNO02|07|WALLNÖFER KG - DORFLADEN|D. WALLNÖFER OSWALD & CO.|LAATSCH, 72|MALS|BZ|39024|01473770210||01|N||
 ZERESS|ZERESS|07|CHRISTANDL MANUEL|RESTAURANT ZERESS|BURGEIS, 300|MALS|BZ|39026|03117590210||01|N||
-ZONE|ZONE01|07|BAR ZONE||KIEFERNHAINWEG, 106|PRAD AM STILFSERJOCH|BZ|39026|02697990212||01|N||
-ZONE01|ZONE01|07|KFZ-SERVICE-LOOS GMBH||INDUSTRIESTR. 23|LAAS|BZ|39023|02697990212||01|N||
