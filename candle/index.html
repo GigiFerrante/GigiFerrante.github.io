@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candela con Fumo Finale</title>
+    <style>
+        body {
+            background: #050505;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #timer {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #ffaa00;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+        }
+
+        .candle-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 350px;
+        }
+
+        /* Corpo candela */
+        .candle-body {
+            width: 70px;
+            height: 180px;
+            background: linear-gradient(to right, #e0e0e0 0%, #ffffff 20%, #d1d1d1 100%);
+            border-radius: 6px 6px 4px 4px;
+            position: relative;
+            animation: melt 10s linear forwards;
+            box-shadow: inset -15px 0 20px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .wick {
+            width: 4px;
+            height: 15px;
+            background: #111;
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        /* Fiamma */
+        .flame-wrapper {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: melt-pos 10s linear forwards;
+            z-index: 10;
+        }
+
+        .flame {
+            width: 24px;
+            height: 45px;
+            background: linear-gradient(to bottom, #fff 0%, #ffffaa 20%, #ffaa00 50%, #ff4400 90%);
+            border-radius: 50% 50% 35% 35%;
+            filter: blur(1px);
+            animation: flicker 0.15s ease-in-out infinite alternate;
+            box-shadow: 0 0 20px #ffaa00, 0 0 50px rgba(255, 68, 0, 0.6);
+        }
+
+        /* Effetto Fumo */
+        .smoke-particle {
+            position: absolute;
+            background: rgba(200, 200, 200, 0.3);
+            border-radius: 50%;
+            filter: blur(8px);
+            pointer-events: none;
+            opacity: 0;
+            animation: rise-and-fade 2.5s ease-out forwards;
+        }
+
+        /* Animazioni */
+        @keyframes melt {
+            0% { height: 180px; }
+            100% { height: 20px; background: #bbb; }
+        }
+
+        @keyframes flicker {
+            0% { transform: scale(1, 1) rotate(-1deg); }
+            100% { transform: scale(1.05, 1.15) rotate(1deg); }
+        }
+
+        @keyframes die-out {
+            0% { opacity: 1; transform: scale(1); filter: blur(1px); }
+            100% { opacity: 0; transform: scale(0); filter: blur(10px); }
+        }
+
+        @keyframes rise-and-fade {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            15% { opacity: 0.6; }
+            100% { transform: translateY(-150px) scale(3); opacity: 0; }
+        }
+
+        .extinguish {
+            animation: die-out 0.4s ease-out forwards !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="timer">10.0s</div>
+
+    <div class="candle-container">
+        <div class="flame-wrapper" id="flame-container">
+            <div class="flame"></div>
+        </div>
+        <div class="candle-body" id="candle">
+            <div class="wick" id="wick"></div>
+        </div>
+    </div>
+
+    <script>
+        const timerElement = document.getElementById('timer');
+        const flame = document.getElementById('flame-container');
+        const wick = document.getElementById('wick');
+        let timeLeft = 10.0;
+
+        const countdown = setInterval(() => {
+            timeLeft -= 0.1;
+            
+            if (timeLeft <= 0) {
+                timeLeft = 0;
+                clearInterval(countdown);
+                finishCandle();
+            }
+            timerElement.textContent = timeLeft.toFixed(1) + 's';
+        }, 100);
+
+        function finishCandle() {
+            flame.classList.add('extinguish');
+            
+            // Crea l'effetto fumo dopo un brevissimo delay
+            setTimeout(() => {
+                createSmoke();
+            }, 300);
+        }
+
+        function createSmoke() {
+            // Genera più particelle di fumo per un effetto denso
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    const smoke = document.createElement('div');
+                    smoke.className = 'smoke-particle';
+                    
+                    // Dimensioni casuali
+                    const size = Math.random() * 15 + 10 + 'px';
+                    smoke.style.width = size;
+                    smoke.style.height = size;
+                    
+                    // Posiziona sopra lo stoppino
+                    const rect = wick.getBoundingClientRect();
+                    smoke.style.left = (rect.left + rect.width / 2 + (Math.random() * 10 - 5)) + 'px';
+                    smoke.style.top = rect.top + 'px';
+                    
+                    document.body.appendChild(smoke);
+                    
+                    // Rimuovi l'elemento dal DOM dopo l'animazione
+                    setTimeout(() => smoke.remove(), 2500);
+                }, i * 150); // Delay tra una particella e l'altra
+            }
+        }
+    </script>
+</body>
+  </html>
+  
