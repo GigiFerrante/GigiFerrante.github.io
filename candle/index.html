@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela Realistica 10s</title>
+    <title>Candela con Sensore di Movimento</title>
     <style>
         body {
             background: #050505;
@@ -13,7 +13,8 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: sans-serif;
+            color: white;
         }
 
         #timer {
@@ -23,41 +24,44 @@
             color: #ffaa00;
             font-size: 3rem;
             font-weight: bold;
-            text-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
         }
 
-        /* Contenitore che tiene la candela a terra */
-        .floor {
+        /* Pulsante per attivare i sensori (richiesto da molti browser) */
+        #start-btn {
+            position: absolute;
+            z-index: 100;
+            padding: 15px 30px;
+            background: #ffaa00;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .scene {
             position: relative;
-            width: 200px;
-            height: 5px;
-            background: rgba(255,255,255,0.05);
             display: flex;
-            justify-content: center;
             align-items: flex-end;
+            height: 300px;
         }
 
-        /* Il corpo della candela */
         .candle-body {
-            width: 60px;
-            height: 200px; /* Altezza iniziale */
-            background: linear-gradient(to right, #e0e0e0, #ffffff 30%, #d1d1d1);
+            width: 65px;
+            height: 200px;
+            background: linear-gradient(to right, #ddd, #fff 30%, #bbb);
             border-radius: 6px 6px 2px 2px;
             position: relative;
-            box-shadow: inset -10px 0 15px rgba(0,0,0,0.1), 0 0 10px rgba(0,0,0,0.5);
-            
-            /* ANIMAZIONE SCIOGLIMENTO */
             animation: melt-height 10s linear forwards;
+            animation-play-state: paused; /* Parte al clic */
         }
 
         @keyframes melt-height {
             0% { height: 200px; }
-            100% { height: 25px; }
+            100% { height: 35px; }
         }
 
-        /* Lo stoppino */
         .wick {
-            width: 4px;
+            width: 5px;
             height: 12px;
             background: #222;
             position: absolute;
@@ -67,43 +71,42 @@
             border-radius: 2px;
         }
 
-        /* La fiamma */
         .flame-container {
             position: absolute;
-            top: -55px; /* Distanza dallo stoppino */
+            top: -55px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10;
+            transition: transform 0.1s ease-out; /* Per la rotazione fluida */
+            transform-origin: bottom center;
         }
 
         .flame {
-            width: 22px;
+            width: 24px;
             height: 50px;
             background: linear-gradient(to bottom, #fff, #ffffaa, #ffaa00, #ff4400);
             border-radius: 50% 50% 35% 35%;
             filter: blur(1px);
             animation: flicker 0.1s ease-in-out infinite alternate;
-            box-shadow: 0 0 25px #ffaa00, 0 0 45px rgba(255, 68, 0, 0.5);
+            box-shadow: 0 0 25px #ffaa00, 0 0 50px rgba(255, 68, 0, 0.5);
         }
 
-        /* Animazioni della fiamma */
         @keyframes flicker {
-            0% { transform: scale(1) rotate(-1.5deg); opacity: 0.8; }
-            100% { transform: scale(1.1) rotate(1.5deg); opacity: 1; }
+            0% { transform: scale(1) rotate(-1deg); }
+            100% { transform: scale(1.1) rotate(1deg); }
         }
 
-        /* Effetto fumo */
         .smoke-particle {
             position: absolute;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(100, 100, 100, 0.6);
             border-radius: 50%;
-            filter: blur(6px);
+            filter: blur(8px);
             pointer-events: none;
         }
 
         @keyframes rise-smoke {
-            0% { transform: translateY(0) scale(1); opacity: 0.4; }
-            100% { transform: translateY(-150px) scale(4); opacity: 0; }
+            0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+            10% { opacity: 0.8; }
+            100% { transform: translateY(-250px) translateX(var(--tilt-drift)) scale(6); opacity: 0; }
         }
 
         .hidden { display: none; }
@@ -111,9 +114,10 @@
 </head>
 <body>
 
+    <button id="start-btn">ACCENDI CANDELA</button>
     <div id="timer">10.0s</div>
 
-    <div class="floor">
+    <div class="scene">
         <div class="candle-body" id="candle">
             <div class="wick" id="wick"></div>
             <div class="flame-container" id="flame-box">
@@ -125,44 +129,76 @@
     <script>
         const timerElement = document.getElementById('timer');
         const flameBox = document.getElementById('flame-box');
+        const candle = document.getElementById('candle');
         const wick = document.getElementById('wick');
+        const startBtn = document.getElementById('start-btn');
+        
         let timeLeft = 10.0;
+        let tiltAngle = 0; // Angolo di inclinazione del cellulare
+        let active = false;
 
-        // Timer decimale fluido
-        const countdown = setInterval(() => {
-            timeLeft -= 0.1;
-            if (timeLeft <= 0) {
-                timeLeft = 0;
-                clearInterval(countdown);
-                extinguish();
+        // Gestione rotazione cellulare
+        window.addEventListener('deviceorientation', (event) => {
+            // Gamma è il rollio sinistra/destra (-90 a 90)
+            if (event.gamma !== null) {
+                // Invertiamo l'angolo per far sì che la fiamma tenda verso l'alto 
+                // rispetto alla gravità quando il cell è inclinato
+                tiltAngle = event.gamma; 
+                if (active) {
+                    flameBox.style.transform = `translateX(-50%) rotate(${-tiltAngle}deg)`;
+                }
             }
-            timerElement.textContent = timeLeft.toFixed(1) + 's';
-        }, 100);
+        });
+
+        startBtn.addEventListener('click', () => {
+            startBtn.classList.add('hidden');
+            active = true;
+            candle.style.animationPlayState = 'running';
+            
+            // Richiesta permessi per iOS (se necessario)
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission();
+            }
+
+            const countdown = setInterval(() => {
+                timeLeft -= 0.1;
+                if (timeLeft <= 0) {
+                    timeLeft = 0;
+                    clearInterval(countdown);
+                    extinguish();
+                }
+                timerElement.textContent = Math.max(0, timeLeft).toFixed(1) + 's';
+            }, 100);
+        });
 
         function extinguish() {
-            // Spegne la fiamma
             flameBox.classList.add('hidden');
-            
-            // Posizione dello stoppino al momento dello spegnimento
+            active = false;
+            createTiltSmoke();
+        }
+
+        function createTiltSmoke() {
             const wickRect = wick.getBoundingClientRect();
             
-            // Crea 15 particelle di fumo
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 30; i++) {
                 setTimeout(() => {
                     const s = document.createElement('div');
                     s.className = 'smoke-particle';
-                    const size = Math.random() * 15 + 10;
+                    
+                    const size = Math.random() * 20 + 20;
+                    // Il fumo viene influenzato dall'ultimo tilt rilevato
+                    const tiltDrift = (tiltAngle * -2) + (Math.random() * 60 - 30);
                     
                     s.style.width = size + 'px';
                     s.style.height = size + 'px';
-                    s.style.left = (wickRect.left + (Math.random() * 10 - 5)) + 'px';
-                    s.style.top = wickRect.top + 'px';
-                    s.style.animation = 'rise-smoke 3s ease-out forwards';
+                    s.style.left = (wickRect.left) + 'px';
+                    s.style.top = (wickRect.top) + 'px';
+                    
+                    s.style.setProperty('--tilt-drift', tiltDrift + 'px');
+                    s.style.animation = 'rise-smoke 4s ease-out forwards';
                     
                     document.body.appendChild(s);
-                    
-                    // Pulisce il DOM
-                    setTimeout(() => s.remove(), 3000);
+                    setTimeout(() => s.remove(), 4000);
                 }, i * 120);
             }
         }
