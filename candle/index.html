@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela Realistica Sincronizzata</title>
+    <title>Candela Realistica 10s</title>
     <style>
         body {
             background: #050505;
@@ -13,41 +13,49 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            font-family: sans-serif;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         #timer {
             position: absolute;
             top: 20px;
-            right: 30px;
+            right: 40px;
             color: #ffaa00;
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: bold;
-            text-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+            text-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
         }
 
-        /* Contenitore principale */
-        .scene {
+        /* Contenitore che tiene la candela a terra */
+        .floor {
             position: relative;
+            width: 200px;
+            height: 5px;
+            background: rgba(255,255,255,0.05);
             display: flex;
-            align-items: flex-end; /* La candela poggia sul fondo */
-            height: 300px;
+            justify-content: center;
+            align-items: flex-end;
         }
 
-        /* Corpo della candela */
+        /* Il corpo della candela */
         .candle-body {
             width: 60px;
-            height: 180px;
+            height: 200px; /* Altezza iniziale */
             background: linear-gradient(to right, #e0e0e0, #ffffff 30%, #d1d1d1);
-            border-radius: 6px;
+            border-radius: 6px 6px 2px 2px;
             position: relative;
-            box-shadow: inset -10px 0 15px rgba(0,0,0,0.1);
-            /* Animazione di scioglimento: scala l'altezza */
-            animation: melt 10s linear forwards;
-            transform-origin: bottom; 
+            box-shadow: inset -10px 0 15px rgba(0,0,0,0.1), 0 0 10px rgba(0,0,0,0.5);
+            
+            /* ANIMAZIONE SCIOGLIMENTO */
+            animation: melt-height 10s linear forwards;
         }
 
-        /* Lo stoppino - fisso in cima alla candela */
+        @keyframes melt-height {
+            0% { height: 200px; }
+            100% { height: 25px; }
+        }
+
+        /* Lo stoppino */
         .wick {
             width: 4px;
             height: 12px;
@@ -59,63 +67,55 @@
             border-radius: 2px;
         }
 
-        /* La fiamma - posizionata sopra lo stoppino */
+        /* La fiamma */
         .flame-container {
             position: absolute;
-            top: -50px; /* Posizionata sopra lo stoppino */
+            top: -55px; /* Distanza dallo stoppino */
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
         }
 
         .flame {
-            width: 20px;
-            height: 45px;
+            width: 22px;
+            height: 50px;
             background: linear-gradient(to bottom, #fff, #ffffaa, #ffaa00, #ff4400);
             border-radius: 50% 50% 35% 35%;
             filter: blur(1px);
             animation: flicker 0.1s ease-in-out infinite alternate;
-            box-shadow: 0 0 20px #ffaa00, 0 0 40px rgba(255, 68, 0, 0.4);
+            box-shadow: 0 0 25px #ffaa00, 0 0 45px rgba(255, 68, 0, 0.5);
         }
 
-        /* Particelle di fumo */
-        .smoke {
-            position: absolute;
-            background: rgba(200, 200, 200, 0.2);
-            border-radius: 50%;
-            filter: blur(5px);
-            pointer-events: none;
-            opacity: 0;
-        }
-
-        /* Animazioni */
-        @keyframes melt {
-            0% { transform: scaleY(1); }
-            100% { transform: scaleY(0.1); } /* Si riduce al 10% della dimensione */
-        }
-
+        /* Animazioni della fiamma */
         @keyframes flicker {
-            0% { transform: scale(1) rotate(-1deg); opacity: 0.8; }
-            100% { transform: scale(1.1) rotate(1deg); opacity: 1; }
+            0% { transform: scale(1) rotate(-1.5deg); opacity: 0.8; }
+            100% { transform: scale(1.1) rotate(1.5deg); opacity: 1; }
+        }
+
+        /* Effetto fumo */
+        .smoke-particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            filter: blur(6px);
+            pointer-events: none;
         }
 
         @keyframes rise-smoke {
-            0% { transform: translateY(0) scale(0.5); opacity: 0.5; }
-            100% { transform: translateY(-120px) scale(2.5); opacity: 0; }
+            0% { transform: translateY(0) scale(1); opacity: 0.4; }
+            100% { transform: translateY(-150px) scale(4); opacity: 0; }
         }
 
-        .extinguish {
-            display: none;
-        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
     <div id="timer">10.0s</div>
 
-    <div class="scene">
+    <div class="floor">
         <div class="candle-body" id="candle">
-            <div class="wick"></div>
+            <div class="wick" id="wick"></div>
             <div class="flame-container" id="flame-box">
                 <div class="flame"></div>
             </div>
@@ -125,43 +125,45 @@
     <script>
         const timerElement = document.getElementById('timer');
         const flameBox = document.getElementById('flame-box');
-        const candle = document.getElementById('candle');
+        const wick = document.getElementById('wick');
         let timeLeft = 10.0;
 
+        // Timer decimale fluido
         const countdown = setInterval(() => {
             timeLeft -= 0.1;
             if (timeLeft <= 0) {
                 timeLeft = 0;
                 clearInterval(countdown);
-                extinguishCandle();
+                extinguish();
             }
             timerElement.textContent = timeLeft.toFixed(1) + 's';
         }, 100);
 
-        function extinguishCandle() {
-            flameBox.classList.add('extinguish');
-            createSmokeEffect();
-        }
-
-        function createSmokeEffect() {
-            const rect = candle.getBoundingClientRect();
-            // Genera particelle di fumo coordinate con la posizione finale della candela
-            for (let i = 0; i < 10; i++) {
+        function extinguish() {
+            // Spegne la fiamma
+            flameBox.classList.add('hidden');
+            
+            // Posizione dello stoppino al momento dello spegnimento
+            const wickRect = wick.getBoundingClientRect();
+            
+            // Crea 15 particelle di fumo
+            for (let i = 0; i < 15; i++) {
                 setTimeout(() => {
                     const s = document.createElement('div');
-                    s.className = 'smoke';
+                    s.className = 'smoke-particle';
                     const size = Math.random() * 15 + 10;
+                    
                     s.style.width = size + 'px';
                     s.style.height = size + 'px';
-                    
-                    // Posiziona dove si trova la cima della candela ora
-                    s.style.left = (rect.left + rect.width / 2) + 'px';
-                    s.style.top = rect.top + 'px';
-                    s.style.animation = 'rise-smoke 2s ease-out forwards';
+                    s.style.left = (wickRect.left + (Math.random() * 10 - 5)) + 'px';
+                    s.style.top = wickRect.top + 'px';
+                    s.style.animation = 'rise-smoke 3s ease-out forwards';
                     
                     document.body.appendChild(s);
-                    setTimeout(() => s.remove(), 2000);
-                }, i * 200);
+                    
+                    // Pulisce il DOM
+                    setTimeout(() => s.remove(), 3000);
+                }, i * 120);
             }
         }
     </script>
