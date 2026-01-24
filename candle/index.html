@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela Realistica Pro</title>
+    <title>Candela Realistica - Soffia per Spegnere</title>
     <style>
         body {
             background: #050505;
@@ -13,7 +13,7 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: sans-serif;
         }
 
         #timer {
@@ -38,10 +38,7 @@
             font-size: 1.2rem;
             cursor: pointer;
             box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
-            transition: all 0.3s;
         }
-
-        #start-btn:hover { background: #ffcc55; }
 
         .scene {
             position: relative;
@@ -56,7 +53,6 @@
             background: linear-gradient(to right, #ddd, #fff 30%, #bbb);
             border-radius: 6px 6px 4px 4px;
             position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
         .melting { animation: melt-height 10s linear forwards; }
@@ -84,7 +80,7 @@
             transform: translateX(-50%);
             transform-origin: bottom center;
             opacity: 0;
-            transition: opacity 0.4s;
+            transition: opacity 0.3s;
         }
 
         .flame-container.active { opacity: 1; }
@@ -104,29 +100,18 @@
             100% { transform: scale(1.05) rotate(1deg); }
         }
 
-        /* --- FUMO REALISTICO --- */
         .smoke-particle {
             position: absolute;
-            /* Usiamo un gradiente radiale che sfuma verso la trasparenza totale */
             background: radial-gradient(circle, rgba(150,150,150,0.4) 0%, rgba(100,100,100,0.1) 40%, transparent 70%);
             border-radius: 50%;
             pointer-events: none;
-            z-index: 10;
             filter: blur(5px);
-            will-change: transform, opacity;
         }
 
         @keyframes rise-smoke {
-            0% { 
-                transform: translateY(0) scale(0.3) rotate(0deg); 
-                opacity: 0; 
-            }
+            0% { transform: translateY(0) scale(0.3); opacity: 0; }
             15% { opacity: 0.6; }
-            100% { 
-                /* Spostamento verso l'alto e rotazione casuale per naturalezza */
-                transform: translateY(-350px) translateX(var(--tilt-drift)) scale(4) rotate(var(--rot)); 
-                opacity: 0; 
-            }
+            100% { transform: translateY(-350px) translateX(var(--tilt-drift)) scale(5); opacity: 0; }
         }
 
         .hidden { opacity: 0; pointer-events: none; }
@@ -134,7 +119,7 @@
 </head>
 <body>
 
-    <button id="start-btn">ACCENDI CANDELA</button>
+    <button id="start-btn">ACCENDI E SOFFIA</button>
     <div id="timer">10.0s</div>
 
     <div class="scene">
@@ -156,65 +141,101 @@
         let timeLeft = 10.0;
         let tiltAngle = 0;
         let isMelting = false;
+        let countdownInterval;
+        let audioContext, analyser, microphone, javascriptNode;
 
+        // Gestione sensore inclinazione
         window.addEventListener('deviceorientation', (e) => {
             if (e.gamma !== null) {
                 tiltAngle = e.gamma; 
-                if (isMelting) {
-                    flameBox.style.transform = `translateX(-50%) rotate(${-tiltAngle}deg)`;
-                }
+                if (isMelting) flameBox.style.transform = `translateX(-50%) rotate(${-tiltAngle}deg)`;
             }
         });
 
-        startBtn.addEventListener('click', () => {
+        startBtn.addEventListener('click', async () => {
+            await initMicrophone(); // Attiva il microfono
+            startCandle();
+        });
+
+        function startCandle() {
             timeLeft = 10.0;
             isMelting = true;
             startBtn.classList.add('hidden');
             flameBox.classList.add('active');
             candle.classList.add('melting');
+            candle.style.animationPlayState = 'running';
 
-            const countdown = setInterval(() => {
+            countdownInterval = setInterval(() => {
                 timeLeft -= 0.1;
                 if (timeLeft <= 0) {
                     timeLeft = 0;
-                    clearInterval(countdown);
                     extinguish();
                 }
                 timerElement.textContent = Math.max(0, timeLeft).toFixed(1) + 's';
             }, 100);
-        });
+        }
+
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser.fftSize = 256;
+                microphone.connect(analyser);
+
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                const checkBlow = () => {
+                    if (!isMelting) return;
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    let average = sum / dataArray.length;
+
+                    if (average > 50) { // Soglia del soffio (regolabile)
+                        extinguish();
+                    } else {
+                        requestAnimationFrame(checkBlow);
+                    }
+                };
+                checkBlow();
+            } catch (err) {
+                console.log("Microfono non disponibile o negato.");
+            }
+        }
 
         function extinguish() {
-            flameBox.classList.remove('active');
+            if (!isMelting) return;
+            clearInterval(countdownInterval);
             isMelting = false;
+            
+            flameBox.classList.remove('active');
+            candle.style.animationPlayState = 'paused'; // Ferma lo scioglimento
+            
             createSoftSmoke();
 
             setTimeout(() => {
                 candle.classList.remove('melting');
                 startBtn.classList.remove('hidden');
                 startBtn.textContent = "RIACCENDI";
-            }, 6000);
+            }, 5000);
         }
 
         function createSoftSmoke() {
             const wickRect = wick.getBoundingClientRect();
-            // Aumentiamo il numero di particelle ma le rendiamo più eteree
             for (let i = 0; i < 40; i++) {
                 setTimeout(() => {
                     const s = document.createElement('div');
                     s.className = 'smoke-particle';
-                    
-                    const size = Math.random() * 40 + 30; // Particelle più grandi e soffuse
+                    const size = Math.random() * 40 + 30;
                     const tiltEffect = (tiltAngle * -4) + (Math.random() * 100 - 50);
-                    const rotation = (Math.random() * 360) + "deg";
                     
                     s.style.width = size + 'px';
                     s.style.height = size + 'px';
-                    s.style.left = (wickRect.left + (Math.random() * 10 - 5)) + 'px';
+                    s.style.left = wickRect.left + 'px';
                     s.style.top = (wickRect.top - 20) + 'px';
-                    
                     s.style.setProperty('--tilt-drift', tiltEffect + 'px');
-                    s.style.setProperty('--rot', rotation);
                     s.style.animation = 'rise-smoke 5s ease-out forwards';
                     
                     document.body.appendChild(s);
