@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela Realistica - Fix Reset</title>
+    <title>Candela Realistica - Fix Consumo</title>
     <style>
         body {
             background: #050505;
@@ -50,15 +50,16 @@
 
         .candle-body {
             width: 60px;
-            height: 200px;
+            height: 200px; /* Altezza base */
             background: linear-gradient(to right, #ddd, #fff 30%, #bbb);
             border-radius: 6px 6px 4px 4px;
             position: relative;
+            transition: height 0.1s linear; /* Per rendere fluidi i piccoli cambi di stato */
         }
 
-        /* Definiamo l'animazione separatamente per poterla resettare */
+        /* Classe che attiva l'animazione */
         .melting-active { 
-            animation: melt-height 10s linear forwards !important; 
+            animation: melt-height 10s linear forwards; 
         }
 
         @keyframes melt-height {
@@ -85,6 +86,7 @@
             transform-origin: bottom center;
             opacity: 0;
             transition: opacity 0.3s;
+            pointer-events: none;
         }
 
         .flame-container.active { opacity: 1; }
@@ -147,7 +149,7 @@
         let isMelting = false;
         let countdownInterval;
         let audioContext, analyser, dataArray;
-        let canBlow = false; // Per evitare spegnimenti accidentali immediati
+        let canBlow = false;
 
         window.addEventListener('deviceorientation', (e) => {
             if (e.gamma !== null) {
@@ -162,24 +164,23 @@
         });
 
         function resetAndStart() {
-            // 1. Reset Variabili
             clearInterval(countdownInterval);
             timeLeft = 10.0;
             timerElement.textContent = "10.0s";
             canBlow = false;
             
-            // 2. Reset Grafico (Riavvio animazione CSS)
+            // RESET TOTALE: Rimuovo animazione e forzo altezza iniziale
             candle.classList.remove('melting-active');
-            void candle.offsetWidth; // Trigger reflow per resettare l'animazione
+            candle.style.height = "200px"; 
+            void candle.offsetWidth; // Force reflow
             
-            // 3. Avvio
             isMelting = true;
             startBtn.classList.add('hidden');
             flameBox.classList.add('active');
+            
+            // Avvio animazione
             candle.classList.add('melting-active');
-            candle.style.animationPlayState = 'running';
 
-            // 4. Timer
             countdownInterval = setInterval(() => {
                 timeLeft -= 0.1;
                 if (timeLeft <= 0) {
@@ -189,8 +190,7 @@
                 timerElement.textContent = Math.max(0, timeLeft).toFixed(1) + 's';
             }, 100);
 
-            // Attiva il sensore del soffio dopo 500ms per evitare il rumore del click
-            setTimeout(() => { canBlow = true; }, 500);
+            setTimeout(() => { canBlow = true; }, 400);
         }
 
         async function initMicrophone() {
@@ -207,8 +207,8 @@
                     if (isMelting && canBlow) {
                         analyser.getByteFrequencyData(dataArray);
                         let values = 0;
-                        for (let i = 15; i < dataArray.length; i++) values += dataArray[i];
-                        let average = values / (dataArray.length - 15);
+                        for (let i = 20; i < dataArray.length; i++) values += dataArray[i];
+                        let average = values / (dataArray.length - 20);
 
                         if (average > 25) extinguish(); 
                     }
@@ -216,7 +216,7 @@
                 };
                 monitor();
             } catch (err) {
-                alert("Microfono necessario per l'effetto soffio.");
+                console.log("Microfono non attivato.");
             }
         }
 
@@ -225,8 +225,12 @@
             isMelting = false;
             clearInterval(countdownInterval);
             
+            // SALVA L'ALTEZZA ATTUALE E FERMA L'ANIMAZIONE
+            const currentHeight = window.getComputedStyle(candle).height;
+            candle.classList.remove('melting-active');
+            candle.style.height = currentHeight; // Blocca la candela dove si trova
+
             flameBox.classList.remove('active');
-            candle.style.animationPlayState = 'paused';
             
             createSoftSmoke();
 
@@ -240,7 +244,7 @@
             const wickRect = wick.getBoundingClientRect();
             for (let i = 0; i < 35; i++) {
                 setTimeout(() => {
-                    if (isMelting) return; // Interrompe fumo se riaccesa subito
+                    if (isMelting) return;
                     const s = document.createElement('div');
                     s.className = 'smoke-particle';
                     const size = Math.random() * 40 + 30;
@@ -260,5 +264,4 @@
         }
     </script>
 </body>
-    </html>
-    
+</html>
