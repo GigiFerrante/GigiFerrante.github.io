@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela Realistica - Soffia per Spegnere</title>
+    <title>Candela Sensibile al Soffio</title>
     <style>
         body {
             background: #050505;
@@ -24,6 +24,7 @@
             font-size: 3rem;
             font-weight: bold;
             text-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+            z-index: 10;
         }
 
         #start-btn {
@@ -142,9 +143,9 @@
         let tiltAngle = 0;
         let isMelting = false;
         let countdownInterval;
-        let audioContext, analyser, microphone, javascriptNode;
+        let audioContext, analyser, microphone;
 
-        // Gestione sensore inclinazione
+        // Sensore inclinazione
         window.addEventListener('deviceorientation', (e) => {
             if (e.gamma !== null) {
                 tiltAngle = e.gamma; 
@@ -153,7 +154,8 @@
         });
 
         startBtn.addEventListener('click', async () => {
-            await initMicrophone(); // Attiva il microfono
+            // Avviamo l'audio al click (necessario per policy browser)
+            if (!audioContext) await initMicrophone();
             startCandle();
         });
 
@@ -181,27 +183,36 @@
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
                 microphone = audioContext.createMediaStreamSource(stream);
-                analyser.fftSize = 256;
+                analyser.fftSize = 512; // Maggiore precisione
                 microphone.connect(analyser);
 
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 
                 const checkBlow = () => {
-                    if (!isMelting) return;
-                    analyser.getByteFrequencyData(dataArray);
-                    let sum = 0;
-                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-                    let average = sum / dataArray.length;
-
-                    if (average > 50) { // Soglia del soffio (regolabile)
-                        extinguish();
-                    } else {
+                    if (!isMelting) {
                         requestAnimationFrame(checkBlow);
+                        return;
                     }
+
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    // Calcoliamo il volume medio solo sulle frequenze medio-alte (tipiche del soffio)
+                    let values = 0;
+                    for (let i = 10; i < dataArray.length; i++) {
+                        values += dataArray[i];
+                    }
+                    let average = values / (dataArray.length - 10);
+
+                    // SOGLIA MOLTO BASSA (20) per massima sensibilità
+                    if (average > 20) { 
+                        extinguish();
+                    }
+                    
+                    requestAnimationFrame(checkBlow);
                 };
                 checkBlow();
             } catch (err) {
-                console.log("Microfono non disponibile o negato.");
+                alert("Per spegnere soffiando devi consentire l'uso del microfono.");
             }
         }
 
@@ -211,12 +222,14 @@
             isMelting = false;
             
             flameBox.classList.remove('active');
-            candle.style.animationPlayState = 'paused'; // Ferma lo scioglimento
+            candle.style.animationPlayState = 'paused';
             
             createSoftSmoke();
 
             setTimeout(() => {
                 candle.classList.remove('melting');
+                // Forza reset altezza per il riavvio
+                void candle.offsetWidth; 
                 startBtn.classList.remove('hidden');
                 startBtn.textContent = "RIACCENDI";
             }, 5000);
@@ -233,7 +246,7 @@
                     
                     s.style.width = size + 'px';
                     s.style.height = size + 'px';
-                    s.style.left = wickRect.left + 'px';
+                    s.style.left = (wickRect.left - size/2 + 2) + 'px';
                     s.style.top = (wickRect.top - 20) + 'px';
                     s.style.setProperty('--tilt-drift', tiltEffect + 'px');
                     s.style.animation = 'rise-smoke 5s ease-out forwards';
