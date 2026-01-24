@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela Sensibile al Soffio</title>
+    <title>Candela Realistica - Fix Reset</title>
     <style>
         body {
             background: #050505;
@@ -56,7 +56,10 @@
             position: relative;
         }
 
-        .melting { animation: melt-height 10s linear forwards; }
+        /* Definiamo l'animazione separatamente per poterla resettare */
+        .melting-active { 
+            animation: melt-height 10s linear forwards !important; 
+        }
 
         @keyframes melt-height {
             0% { height: 200px; }
@@ -115,12 +118,12 @@
             100% { transform: translateY(-350px) translateX(var(--tilt-drift)) scale(5); opacity: 0; }
         }
 
-        .hidden { opacity: 0; pointer-events: none; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <button id="start-btn">ACCENDI E SOFFIA</button>
+    <button id="start-btn">ACCENDI</button>
     <div id="timer">10.0s</div>
 
     <div class="scene">
@@ -143,9 +146,9 @@
         let tiltAngle = 0;
         let isMelting = false;
         let countdownInterval;
-        let audioContext, analyser, microphone;
+        let audioContext, analyser, dataArray;
+        let canBlow = false; // Per evitare spegnimenti accidentali immediati
 
-        // Sensore inclinazione
         window.addEventListener('deviceorientation', (e) => {
             if (e.gamma !== null) {
                 tiltAngle = e.gamma; 
@@ -154,19 +157,29 @@
         });
 
         startBtn.addEventListener('click', async () => {
-            // Avviamo l'audio al click (necessario per policy browser)
             if (!audioContext) await initMicrophone();
-            startCandle();
+            resetAndStart();
         });
 
-        function startCandle() {
+        function resetAndStart() {
+            // 1. Reset Variabili
+            clearInterval(countdownInterval);
             timeLeft = 10.0;
+            timerElement.textContent = "10.0s";
+            canBlow = false;
+            
+            // 2. Reset Grafico (Riavvio animazione CSS)
+            candle.classList.remove('melting-active');
+            void candle.offsetWidth; // Trigger reflow per resettare l'animazione
+            
+            // 3. Avvio
             isMelting = true;
             startBtn.classList.add('hidden');
             flameBox.classList.add('active');
-            candle.classList.add('melting');
+            candle.classList.add('melting-active');
             candle.style.animationPlayState = 'running';
 
+            // 4. Timer
             countdownInterval = setInterval(() => {
                 timeLeft -= 0.1;
                 if (timeLeft <= 0) {
@@ -175,6 +188,9 @@
                 }
                 timerElement.textContent = Math.max(0, timeLeft).toFixed(1) + 's';
             }, 100);
+
+            // Attiva il sensore del soffio dopo 500ms per evitare il rumore del click
+            setTimeout(() => { canBlow = true; }, 500);
         }
 
         async function initMicrophone() {
@@ -182,44 +198,32 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
-                microphone = audioContext.createMediaStreamSource(stream);
-                analyser.fftSize = 512; // Maggiore precisione
+                const microphone = audioContext.createMediaStreamSource(stream);
+                analyser.fftSize = 512;
                 microphone.connect(analyser);
-
-                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
                 
-                const checkBlow = () => {
-                    if (!isMelting) {
-                        requestAnimationFrame(checkBlow);
-                        return;
-                    }
+                const monitor = () => {
+                    if (isMelting && canBlow) {
+                        analyser.getByteFrequencyData(dataArray);
+                        let values = 0;
+                        for (let i = 15; i < dataArray.length; i++) values += dataArray[i];
+                        let average = values / (dataArray.length - 15);
 
-                    analyser.getByteFrequencyData(dataArray);
-                    
-                    // Calcoliamo il volume medio solo sulle frequenze medio-alte (tipiche del soffio)
-                    let values = 0;
-                    for (let i = 10; i < dataArray.length; i++) {
-                        values += dataArray[i];
+                        if (average > 25) extinguish(); 
                     }
-                    let average = values / (dataArray.length - 10);
-
-                    // SOGLIA MOLTO BASSA (20) per massima sensibilità
-                    if (average > 20) { 
-                        extinguish();
-                    }
-                    
-                    requestAnimationFrame(checkBlow);
+                    requestAnimationFrame(monitor);
                 };
-                checkBlow();
+                monitor();
             } catch (err) {
-                alert("Per spegnere soffiando devi consentire l'uso del microfono.");
+                alert("Microfono necessario per l'effetto soffio.");
             }
         }
 
         function extinguish() {
             if (!isMelting) return;
-            clearInterval(countdownInterval);
             isMelting = false;
+            clearInterval(countdownInterval);
             
             flameBox.classList.remove('active');
             candle.style.animationPlayState = 'paused';
@@ -227,18 +231,16 @@
             createSoftSmoke();
 
             setTimeout(() => {
-                candle.classList.remove('melting');
-                // Forza reset altezza per il riavvio
-                void candle.offsetWidth; 
                 startBtn.classList.remove('hidden');
                 startBtn.textContent = "RIACCENDI";
-            }, 5000);
+            }, 3000);
         }
 
         function createSoftSmoke() {
             const wickRect = wick.getBoundingClientRect();
-            for (let i = 0; i < 40; i++) {
+            for (let i = 0; i < 35; i++) {
                 setTimeout(() => {
+                    if (isMelting) return; // Interrompe fumo se riaccesa subito
                     const s = document.createElement('div');
                     s.className = 'smoke-particle';
                     const size = Math.random() * 40 + 30;
@@ -253,9 +255,10 @@
                     
                     document.body.appendChild(s);
                     setTimeout(() => s.remove(), 5000);
-                }, i * 80);
+                }, i * 70);
             }
         }
     </script>
 </body>
-</html>
+    </html>
+    
