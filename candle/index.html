@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela Interattiva Ciclica</title>
+    <title>Candela Realistica Pro</title>
     <style>
         body {
             background: #050505;
@@ -37,11 +37,11 @@
             font-weight: bold;
             font-size: 1.2rem;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(255, 170, 0, 0.4);
-            transition: transform 0.2s, opacity 0.5s;
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
+            transition: all 0.3s;
         }
 
-        #start-btn:active { transform: scale(0.95); }
+        #start-btn:hover { background: #ffcc55; }
 
         .scene {
             position: relative;
@@ -51,28 +51,25 @@
         }
 
         .candle-body {
-            width: 65px;
+            width: 60px;
             height: 200px;
             background: linear-gradient(to right, #ddd, #fff 30%, #bbb);
-            border-radius: 6px 6px 2px 2px;
+            border-radius: 6px 6px 4px 4px;
             position: relative;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        /* Classe per attivare lo scioglimento */
-        .melting {
-            animation: melt-height 10s linear forwards;
-        }
+        .melting { animation: melt-height 10s linear forwards; }
 
         @keyframes melt-height {
             0% { height: 200px; }
-            100% { height: 35px; }
+            100% { height: 40px; }
         }
 
         .wick {
-            width: 5px;
+            width: 4px;
             height: 12px;
-            background: #222;
+            background: #111;
             position: absolute;
             top: -10px;
             left: 50%;
@@ -86,42 +83,50 @@
             left: 50%;
             transform: translateX(-50%);
             transform-origin: bottom center;
-            opacity: 0; /* Spenta all'inizio */
-            transition: opacity 0.3s;
+            opacity: 0;
+            transition: opacity 0.4s;
         }
 
-        .flame-container.active {
-            opacity: 1;
-        }
+        .flame-container.active { opacity: 1; }
 
         .flame {
-            width: 24px;
+            width: 22px;
             height: 50px;
-            background: linear-gradient(to bottom, #fff, #ffffaa, #ffaa00, #ff4400);
+            background: radial-gradient(ellipse at bottom, #fff 0%, #ffffaa 20%, #ffaa00 50%, #ff4400 95%);
             border-radius: 50% 50% 35% 35%;
             filter: blur(1px);
             animation: flicker 0.1s ease-in-out infinite alternate;
-            box-shadow: 0 0 25px #ffaa00, 0 0 50px rgba(255, 68, 0, 0.5);
+            box-shadow: 0 0 30px #ffaa00, 0 0 60px rgba(255, 68, 0, 0.4);
         }
 
         @keyframes flicker {
             0% { transform: scale(1) rotate(-1deg); }
-            100% { transform: scale(1.1) rotate(1deg); }
+            100% { transform: scale(1.05) rotate(1deg); }
         }
 
+        /* --- FUMO REALISTICO --- */
         .smoke-particle {
             position: absolute;
-            background: rgba(120, 120, 120, 0.6);
+            /* Usiamo un gradiente radiale che sfuma verso la trasparenza totale */
+            background: radial-gradient(circle, rgba(150,150,150,0.4) 0%, rgba(100,100,100,0.1) 40%, transparent 70%);
             border-radius: 50%;
-            filter: blur(8px);
             pointer-events: none;
             z-index: 10;
+            filter: blur(5px);
+            will-change: transform, opacity;
         }
 
         @keyframes rise-smoke {
-            0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
-            10% { opacity: 0.8; }
-            100% { transform: translateY(-300px) translateX(var(--tilt-drift)) scale(8); opacity: 0; }
+            0% { 
+                transform: translateY(0) scale(0.3) rotate(0deg); 
+                opacity: 0; 
+            }
+            15% { opacity: 0.6; }
+            100% { 
+                /* Spostamento verso l'alto e rotazione casuale per naturalezza */
+                transform: translateY(-350px) translateX(var(--tilt-drift)) scale(4) rotate(var(--rot)); 
+                opacity: 0; 
+            }
         }
 
         .hidden { opacity: 0; pointer-events: none; }
@@ -152,32 +157,21 @@
         let tiltAngle = 0;
         let isMelting = false;
 
-        // Sensore Orientamento
-        window.addEventListener('deviceorientation', (event) => {
-            if (event.gamma !== null) {
-                tiltAngle = event.gamma; 
+        window.addEventListener('deviceorientation', (e) => {
+            if (e.gamma !== null) {
+                tiltAngle = e.gamma; 
                 if (isMelting) {
                     flameBox.style.transform = `translateX(-50%) rotate(${-tiltAngle}deg)`;
                 }
             }
         });
 
-        startBtn.addEventListener('click', startExperience);
-
-        function startExperience() {
-            // Reset variabili e UI
+        startBtn.addEventListener('click', () => {
             timeLeft = 10.0;
-            timerElement.textContent = "10.0s";
             isMelting = true;
-            
             startBtn.classList.add('hidden');
             flameBox.classList.add('active');
             candle.classList.add('melting');
-
-            // Richiesta permessi sensori (iOS)
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission();
-            }
 
             const countdown = setInterval(() => {
                 timeLeft -= 0.1;
@@ -188,45 +182,44 @@
                 }
                 timerElement.textContent = Math.max(0, timeLeft).toFixed(1) + 's';
             }, 100);
-        }
+        });
 
         function extinguish() {
             flameBox.classList.remove('active');
             isMelting = false;
-            
-            createHeavySmoke();
+            createSoftSmoke();
 
-            // Dopo che il fumo è finito (circa 5 secondi), resetta la scena
             setTimeout(() => {
                 candle.classList.remove('melting');
                 startBtn.classList.remove('hidden');
-                startBtn.textContent = "RIACCENDI CANDELA";
-            }, 5000);
+                startBtn.textContent = "RIACCENDI";
+            }, 6000);
         }
 
-        function createHeavySmoke() {
+        function createSoftSmoke() {
             const wickRect = wick.getBoundingClientRect();
-            
-            for (let i = 0; i < 30; i++) {
+            // Aumentiamo il numero di particelle ma le rendiamo più eteree
+            for (let i = 0; i < 40; i++) {
                 setTimeout(() => {
                     const s = document.createElement('div');
                     s.className = 'smoke-particle';
                     
-                    const size = Math.random() * 20 + 20;
-                    // Il fumo segue l'inclinazione del cellulare
-                    const tiltDrift = (tiltAngle * -3) + (Math.random() * 80 - 40);
+                    const size = Math.random() * 40 + 30; // Particelle più grandi e soffuse
+                    const tiltEffect = (tiltAngle * -4) + (Math.random() * 100 - 50);
+                    const rotation = (Math.random() * 360) + "deg";
                     
                     s.style.width = size + 'px';
                     s.style.height = size + 'px';
-                    s.style.left = (wickRect.left) + 'px';
-                    s.style.top = (wickRect.top) + 'px';
+                    s.style.left = (wickRect.left + (Math.random() * 10 - 5)) + 'px';
+                    s.style.top = (wickRect.top - 20) + 'px';
                     
-                    s.style.setProperty('--tilt-drift', tiltDrift + 'px');
-                    s.style.animation = 'rise-smoke 4s ease-out forwards';
+                    s.style.setProperty('--tilt-drift', tiltEffect + 'px');
+                    s.style.setProperty('--rot', rotation);
+                    s.style.animation = 'rise-smoke 5s ease-out forwards';
                     
                     document.body.appendChild(s);
-                    setTimeout(() => s.remove(), 4000);
-                }, i * 100);
+                    setTimeout(() => s.remove(), 5000);
+                }, i * 80);
             }
         }
     </script>
