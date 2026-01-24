@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela con Sensore di Movimento</title>
+    <title>Candela Interattiva Ciclica</title>
     <style>
         body {
             background: #050505;
@@ -13,8 +13,7 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            font-family: sans-serif;
-            color: white;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         #timer {
@@ -24,19 +23,25 @@
             color: #ffaa00;
             font-size: 3rem;
             font-weight: bold;
+            text-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
         }
 
-        /* Pulsante per attivare i sensori (richiesto da molti browser) */
         #start-btn {
             position: absolute;
             z-index: 100;
-            padding: 15px 30px;
+            padding: 15px 40px;
             background: #ffaa00;
+            color: #000;
             border: none;
-            border-radius: 5px;
+            border-radius: 50px;
             font-weight: bold;
+            font-size: 1.2rem;
             cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.4);
+            transition: transform 0.2s, opacity 0.5s;
         }
+
+        #start-btn:active { transform: scale(0.95); }
 
         .scene {
             position: relative;
@@ -51,8 +56,12 @@
             background: linear-gradient(to right, #ddd, #fff 30%, #bbb);
             border-radius: 6px 6px 2px 2px;
             position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Classe per attivare lo scioglimento */
+        .melting {
             animation: melt-height 10s linear forwards;
-            animation-play-state: paused; /* Parte al clic */
         }
 
         @keyframes melt-height {
@@ -76,8 +85,13 @@
             top: -55px;
             left: 50%;
             transform: translateX(-50%);
-            transition: transform 0.1s ease-out; /* Per la rotazione fluida */
             transform-origin: bottom center;
+            opacity: 0; /* Spenta all'inizio */
+            transition: opacity 0.3s;
+        }
+
+        .flame-container.active {
+            opacity: 1;
         }
 
         .flame {
@@ -97,19 +111,20 @@
 
         .smoke-particle {
             position: absolute;
-            background: rgba(100, 100, 100, 0.6);
+            background: rgba(120, 120, 120, 0.6);
             border-radius: 50%;
             filter: blur(8px);
             pointer-events: none;
+            z-index: 10;
         }
 
         @keyframes rise-smoke {
             0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
             10% { opacity: 0.8; }
-            100% { transform: translateY(-250px) translateX(var(--tilt-drift)) scale(6); opacity: 0; }
+            100% { transform: translateY(-300px) translateX(var(--tilt-drift)) scale(8); opacity: 0; }
         }
 
-        .hidden { display: none; }
+        .hidden { opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -134,28 +149,32 @@
         const startBtn = document.getElementById('start-btn');
         
         let timeLeft = 10.0;
-        let tiltAngle = 0; // Angolo di inclinazione del cellulare
-        let active = false;
+        let tiltAngle = 0;
+        let isMelting = false;
 
-        // Gestione rotazione cellulare
+        // Sensore Orientamento
         window.addEventListener('deviceorientation', (event) => {
-            // Gamma è il rollio sinistra/destra (-90 a 90)
             if (event.gamma !== null) {
-                // Invertiamo l'angolo per far sì che la fiamma tenda verso l'alto 
-                // rispetto alla gravità quando il cell è inclinato
                 tiltAngle = event.gamma; 
-                if (active) {
+                if (isMelting) {
                     flameBox.style.transform = `translateX(-50%) rotate(${-tiltAngle}deg)`;
                 }
             }
         });
 
-        startBtn.addEventListener('click', () => {
-            startBtn.classList.add('hidden');
-            active = true;
-            candle.style.animationPlayState = 'running';
+        startBtn.addEventListener('click', startExperience);
+
+        function startExperience() {
+            // Reset variabili e UI
+            timeLeft = 10.0;
+            timerElement.textContent = "10.0s";
+            isMelting = true;
             
-            // Richiesta permessi per iOS (se necessario)
+            startBtn.classList.add('hidden');
+            flameBox.classList.add('active');
+            candle.classList.add('melting');
+
+            // Richiesta permessi sensori (iOS)
             if (typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission();
             }
@@ -169,15 +188,23 @@
                 }
                 timerElement.textContent = Math.max(0, timeLeft).toFixed(1) + 's';
             }, 100);
-        });
-
-        function extinguish() {
-            flameBox.classList.add('hidden');
-            active = false;
-            createTiltSmoke();
         }
 
-        function createTiltSmoke() {
+        function extinguish() {
+            flameBox.classList.remove('active');
+            isMelting = false;
+            
+            createHeavySmoke();
+
+            // Dopo che il fumo è finito (circa 5 secondi), resetta la scena
+            setTimeout(() => {
+                candle.classList.remove('melting');
+                startBtn.classList.remove('hidden');
+                startBtn.textContent = "RIACCENDI CANDELA";
+            }, 5000);
+        }
+
+        function createHeavySmoke() {
             const wickRect = wick.getBoundingClientRect();
             
             for (let i = 0; i < 30; i++) {
@@ -186,8 +213,8 @@
                     s.className = 'smoke-particle';
                     
                     const size = Math.random() * 20 + 20;
-                    // Il fumo viene influenzato dall'ultimo tilt rilevato
-                    const tiltDrift = (tiltAngle * -2) + (Math.random() * 60 - 30);
+                    // Il fumo segue l'inclinazione del cellulare
+                    const tiltDrift = (tiltAngle * -3) + (Math.random() * 80 - 40);
                     
                     s.style.width = size + 'px';
                     s.style.height = size + 'px';
@@ -199,7 +226,7 @@
                     
                     document.body.appendChild(s);
                     setTimeout(() => s.remove(), 4000);
-                }, i * 120);
+                }, i * 100);
             }
         }
     </script>
