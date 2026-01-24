@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candela con Fumo Finale</title>
+    <title>Candela Realistica Sincronizzata</title>
     <style>
         body {
             background: #050505;
@@ -13,7 +13,7 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
         }
 
         #timer {
@@ -23,95 +23,89 @@
             color: #ffaa00;
             font-size: 2.5rem;
             font-weight: bold;
-            text-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+            text-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
         }
 
-        .candle-container {
+        /* Contenitore principale */
+        .scene {
             position: relative;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            height: 350px;
+            align-items: flex-end; /* La candela poggia sul fondo */
+            height: 300px;
         }
 
-        /* Corpo candela */
+        /* Corpo della candela */
         .candle-body {
-            width: 70px;
+            width: 60px;
             height: 180px;
-            background: linear-gradient(to right, #e0e0e0 0%, #ffffff 20%, #d1d1d1 100%);
-            border-radius: 6px 6px 4px 4px;
+            background: linear-gradient(to right, #e0e0e0, #ffffff 30%, #d1d1d1);
+            border-radius: 6px;
             position: relative;
+            box-shadow: inset -10px 0 15px rgba(0,0,0,0.1);
+            /* Animazione di scioglimento: scala l'altezza */
             animation: melt 10s linear forwards;
-            box-shadow: inset -15px 0 20px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.3);
+            transform-origin: bottom; 
         }
 
+        /* Lo stoppino - fisso in cima alla candela */
         .wick {
             width: 4px;
-            height: 15px;
-            background: #111;
+            height: 12px;
+            background: #222;
             position: absolute;
-            top: -12px;
+            top: -10px;
             left: 50%;
             transform: translateX(-50%);
             border-radius: 2px;
         }
 
-        /* Fiamma */
-        .flame-wrapper {
+        /* La fiamma - posizionata sopra lo stoppino */
+        .flame-container {
             position: absolute;
-            bottom: 100%;
+            top: -50px; /* Posizionata sopra lo stoppino */
             left: 50%;
             transform: translateX(-50%);
-            animation: melt-pos 10s linear forwards;
             z-index: 10;
         }
 
         .flame {
-            width: 24px;
+            width: 20px;
             height: 45px;
-            background: linear-gradient(to bottom, #fff 0%, #ffffaa 20%, #ffaa00 50%, #ff4400 90%);
+            background: linear-gradient(to bottom, #fff, #ffffaa, #ffaa00, #ff4400);
             border-radius: 50% 50% 35% 35%;
             filter: blur(1px);
-            animation: flicker 0.15s ease-in-out infinite alternate;
-            box-shadow: 0 0 20px #ffaa00, 0 0 50px rgba(255, 68, 0, 0.6);
+            animation: flicker 0.1s ease-in-out infinite alternate;
+            box-shadow: 0 0 20px #ffaa00, 0 0 40px rgba(255, 68, 0, 0.4);
         }
 
-        /* Effetto Fumo */
-        .smoke-particle {
+        /* Particelle di fumo */
+        .smoke {
             position: absolute;
-            background: rgba(200, 200, 200, 0.3);
+            background: rgba(200, 200, 200, 0.2);
             border-radius: 50%;
-            filter: blur(8px);
+            filter: blur(5px);
             pointer-events: none;
             opacity: 0;
-            animation: rise-and-fade 2.5s ease-out forwards;
         }
 
         /* Animazioni */
         @keyframes melt {
-            0% { height: 180px; }
-            100% { height: 20px; background: #bbb; }
+            0% { transform: scaleY(1); }
+            100% { transform: scaleY(0.1); } /* Si riduce al 10% della dimensione */
         }
 
         @keyframes flicker {
-            0% { transform: scale(1, 1) rotate(-1deg); }
-            100% { transform: scale(1.05, 1.15) rotate(1deg); }
+            0% { transform: scale(1) rotate(-1deg); opacity: 0.8; }
+            100% { transform: scale(1.1) rotate(1deg); opacity: 1; }
         }
 
-        @keyframes die-out {
-            0% { opacity: 1; transform: scale(1); filter: blur(1px); }
-            100% { opacity: 0; transform: scale(0); filter: blur(10px); }
-        }
-
-        @keyframes rise-and-fade {
-            0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            15% { opacity: 0.6; }
-            100% { transform: translateY(-150px) scale(3); opacity: 0; }
+        @keyframes rise-smoke {
+            0% { transform: translateY(0) scale(0.5); opacity: 0.5; }
+            100% { transform: translateY(-120px) scale(2.5); opacity: 0; }
         }
 
         .extinguish {
-            animation: die-out 0.4s ease-out forwards !important;
+            display: none;
         }
     </style>
 </head>
@@ -119,66 +113,57 @@
 
     <div id="timer">10.0s</div>
 
-    <div class="candle-container">
-        <div class="flame-wrapper" id="flame-container">
-            <div class="flame"></div>
-        </div>
+    <div class="scene">
         <div class="candle-body" id="candle">
-            <div class="wick" id="wick"></div>
+            <div class="wick"></div>
+            <div class="flame-container" id="flame-box">
+                <div class="flame"></div>
+            </div>
         </div>
     </div>
 
     <script>
         const timerElement = document.getElementById('timer');
-        const flame = document.getElementById('flame-container');
-        const wick = document.getElementById('wick');
+        const flameBox = document.getElementById('flame-box');
+        const candle = document.getElementById('candle');
         let timeLeft = 10.0;
 
         const countdown = setInterval(() => {
             timeLeft -= 0.1;
-            
             if (timeLeft <= 0) {
                 timeLeft = 0;
                 clearInterval(countdown);
-                finishCandle();
+                extinguishCandle();
             }
             timerElement.textContent = timeLeft.toFixed(1) + 's';
         }, 100);
 
-        function finishCandle() {
-            flame.classList.add('extinguish');
-            
-            // Crea l'effetto fumo dopo un brevissimo delay
-            setTimeout(() => {
-                createSmoke();
-            }, 300);
+        function extinguishCandle() {
+            flameBox.classList.add('extinguish');
+            createSmokeEffect();
         }
 
-        function createSmoke() {
-            // Genera più particelle di fumo per un effetto denso
-            for (let i = 0; i < 12; i++) {
+        function createSmokeEffect() {
+            const rect = candle.getBoundingClientRect();
+            // Genera particelle di fumo coordinate con la posizione finale della candela
+            for (let i = 0; i < 10; i++) {
                 setTimeout(() => {
-                    const smoke = document.createElement('div');
-                    smoke.className = 'smoke-particle';
+                    const s = document.createElement('div');
+                    s.className = 'smoke';
+                    const size = Math.random() * 15 + 10;
+                    s.style.width = size + 'px';
+                    s.style.height = size + 'px';
                     
-                    // Dimensioni casuali
-                    const size = Math.random() * 15 + 10 + 'px';
-                    smoke.style.width = size;
-                    smoke.style.height = size;
+                    // Posiziona dove si trova la cima della candela ora
+                    s.style.left = (rect.left + rect.width / 2) + 'px';
+                    s.style.top = rect.top + 'px';
+                    s.style.animation = 'rise-smoke 2s ease-out forwards';
                     
-                    // Posiziona sopra lo stoppino
-                    const rect = wick.getBoundingClientRect();
-                    smoke.style.left = (rect.left + rect.width / 2 + (Math.random() * 10 - 5)) + 'px';
-                    smoke.style.top = rect.top + 'px';
-                    
-                    document.body.appendChild(smoke);
-                    
-                    // Rimuovi l'elemento dal DOM dopo l'animazione
-                    setTimeout(() => smoke.remove(), 2500);
-                }, i * 150); // Delay tra una particella e l'altra
+                    document.body.appendChild(s);
+                    setTimeout(() => s.remove(), 2000);
+                }, i * 200);
             }
         }
     </script>
 </body>
-  </html>
-  
+</html>
