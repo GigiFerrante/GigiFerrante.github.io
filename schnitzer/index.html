@@ -176,507 +176,318 @@
         </div>
     </div>
 
-    <script>
-        let articoli = [];
-        let anagrafiche = [];
-        let targhe = [];
-        let ddtSalvati = JSON.parse(localStorage.getItem('ddt_local') || '[]');
-        let currentEditingId = null;
-        let currentType = '';
-        let userZona = '00';
-        let zoneSelezionate = []; // Array per memorizzare le scelte delle zone
-        let clienteSelezionato = null;
+<script>
+    // --- STATO DELL'APPLICAZIONE ---
+    let anagraficaArticoli = []; 
+    let anagraficheClienti = [];
+    let targhe = [];
+    let ddtSalvati = JSON.parse(localStorage.getItem('ddt_local') || '[]');
+    let currentEditingId = null;
+    let currentType = '';
+    let zoneSelezionate = [];
 
-        window.onload = async () => {
-            popolaZone();
-            await caricaCSVBase();
-            renderTarghe();
+    // --- CARICAMENTO INIZIALE ---
+    window.onload = async () => {
+        popolaZone();
+        await caricaDatiBase();
+        renderTarghe();
+    };
+
+    async function caricaDatiBase() {
+        try {
+            // Caricamento Articoli
+            const resArt = await fetch('ANAPC00F_20260112 prodotti - Copia.csv');
+            const textArt = await resArt.text();
+            anagraficaArticoli = textArt.split('\n').slice(2).filter(r => r.includes('|')).map(row => {
+                const c = row.split('|'); 
+                return { id: c[0].trim(), um: c[1].trim(), nome: c[3].trim(), prezzoBase: parseFloat(c[6]) || 0 };
+            });
+            // Caricamento Targhe
+            const resTar = await fetch('targhe.csv');
+            targhe = (await resTar.text()).split('\n').map(t => t.trim()).filter(t => t);
+        } catch (e) { console.error("Errore caricamento file base:", e); }
+    }
+
+    // --- GESTIONE LOGIN E ZONE ---
+    function popolaZone() {
+        const container = document.getElementById('zona-grid-container');
+        const zoneList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '22'];
+        container.innerHTML = zoneList.map(z => `<div class="zona-btn" id="btn-zona-${z}" onclick="toggleZona('${z}')">${z}</div>`).join('');        
+    }
+
+    function toggleZona(z) {
+        const btn = document.getElementById(`btn-zona-${z}`);
+        const idx = zoneSelezionate.indexOf(z);
+        if (idx > -1) { zoneSelezionate.splice(idx, 1); btn.classList.remove('selected'); }
+        else { zoneSelezionate.push(z); btn.classList.add('selected'); }
+    }
+
+    async function handleLogin() {
+        const u = document.getElementById('user').value;
+        if(!u || zoneSelezionate.length === 0) return alert("Inserisci utente e seleziona almeno una zona");
+        
+        await caricaAnagraficheZone(zoneSelezionate);
+        document.getElementById('user-display').innerText = `UTENTE: ${u.toUpperCase()} | ZONE: ${zoneSelezionate.sort().join(', ')}`;
+        showPage('dashboard');
+    }
+
+    async function caricaAnagraficheZone(zoneArray) {
+        anagraficheClienti = [];
+        for (const zona of zoneArray) {
+            try {
+                const res = await fetch(`anagrafiche_${zona}.csv`);
+                if (!res.ok) continue;
+                const text = await res.text();
+                const nuovi = text.split('\n').slice(1).filter(r => r.includes('|')).map(row => {
+                    const c = row.split('|');
+                    return { id: c[0].trim(), nome: c[3].trim(), zona: c[2].trim(), localita: c[4]?.trim() || "" };
+                });
+                anagraficheClienti = anagraficheClienti.concat(nuovi);
+            } catch (e) { console.error(`Errore zona ${zona}`, e); }
+        }
+    }
+
+    // --- LOGICA CORE: RENDERING E FILTRI ---
+    
+    // Funzione UNICA per creare l'HTML di una riga articolo
+    function creaRigaArticolo(art, qtaVal = 0, colliVal = 0, przVal = 0) {
+        const qFmt = parseFloat(qtaVal || 0).toFixed(3);
+        const pFmt = parseFloat(przVal || 0).toFixed(2);
+        return `
+            <div class="list-item" data-id="${art.id}" data-nome="${art.nome}">
+                <div class="item-header"><strong>${art.id}</strong> ${art.nome}</div>
+                <div class="input-row">
+                    ${currentType === 'CARICO' ? `
+                        <div class="qty-container"><label>COLLI</label><input type="number" class="large-input colli-in" value="${colliVal}" onfocus="this.select()" oninput="pulisciErrore(this)"></div>
+                        <div class="qty-container"><label>QUANTITÀ</label><input type="number" step="0.001" class="large-input qta-in" value="${qFmt}" onfocus="this.select()" oninput="pulisciErrore(this)"></div>
+                    ` : `
+                        <div class="qty-container"><label>QUANTITÀ</label><input type="number" step="0.001" class="large-input qta-in" value="${qFmt}" onfocus="this.select()" oninput="pulisciErrore(this)"></div>
+                        <div class="qty-container"><label>PREZZO €</label><input type="number" step="0.01" class="large-input prz-in" value="${pFmt}" onfocus="this.select()"></div>
+                    `}
+                </div>
+                <span class="error-msg" style="color:red; font-size:11px; font-weight:bold; display:block; margin-top:5px; height:15px;"></span>
+            </div>`;
+    }
+
+    function renderArticoli(lista = anagraficaArticoli, isModifica = false) {
+        const container = document.getElementById('articoli-list');
+        if (!container) return;
+        // In modifica mostriamo solo gli articoli passati, in nuovo documento usiamo la ricerca
+        container.innerHTML = lista.map(art => {
+            if(isModifica) return creaRigaArticolo(art, art.qta, art.colli, art.prezzo);
+            return creaRigaArticolo(art, 0, 0, art.prezzoBase || 0);
+        }).join('');
+    }
+
+    function filterArticoli() {
+        const q = document.getElementById('art-search').value.toLowerCase();
+        document.querySelectorAll('#articoli-list .list-item').forEach(item => {
+            const match = item.dataset.nome.toLowerCase().includes(q) || item.dataset.id.toLowerCase().includes(q);
+            item.style.display = match ? 'flex' : 'none';
+        });
+    }
+
+    // --- GESTIONE DOCUMENTI ---
+    function openNewDoc(type) {
+        currentType = type;
+        currentEditingId = null;
+        document.getElementById('editing-info').innerText = "NUOVO: " + type;
+        document.getElementById('doc-date-input').valueAsDate = new Date();
+        
+        document.getElementById('cliente-area').classList.toggle('hidden', type !== 'DDT');
+        
+        // Pulizia campi ricerca
+        document.getElementById('art-search').value = '';
+        resetCliente();
+        
+        showPage('page-editor');
+        renderArticoli(); // Mostra l'intera anagrafica
+    }
+
+    function caricaPerModifica(id) {
+        const doc = ddtSalvati.find(d => d.id === id);
+        if (!doc) return;
+
+        currentEditingId = doc.id;
+        currentType = doc.tipo;
+        
+        // Pulizia barra ricerca prima di mostrare la pagina
+        document.getElementById('art-search').value = '';
+        
+        showPage('page-editor');
+        document.getElementById('editing-info').innerText = "MODIFICA: " + doc.id;
+        
+        // Imposta Cliente
+        const inputVisuale = document.getElementById('cliente-search');
+        const inputNascosto = document.getElementById('selected-cliente-id');
+        inputVisuale.value = `${doc.clienteId} - ${doc.clienteNome}`;
+        inputVisuale.disabled = true;
+        inputNascosto.value = doc.clienteId;
+        inputNascosto.dataset.zona = doc.zona || "";
+
+        // Renderizziamo SOLO gli articoli che hanno valori nel documento
+        renderArticoli(doc.items, true);
+    }
+
+    function salvaInLocale() {
+        const idCli = document.getElementById('selected-cliente-id').value;
+        if (currentType === 'DDT' && !idCli) return alert("Seleziona un cliente!");
+
+        const items = [];
+        let valid = true;
+
+        document.querySelectorAll('#articoli-list .list-item').forEach(el => {
+            const qta = parseFloat(el.querySelector('.qta-in')?.value) || 0;
+            const colli = parseInt(el.querySelector('.colli-in')?.value) || 0;
+            const prz = parseFloat(el.querySelector('.prz-in')?.value) || 0;
+            const errorSpan = el.querySelector('.error-msg');
+
+            if (currentType === 'CARICO' && ((qta > 0 && colli <= 0) || (colli > 0 && qta <= 0))) {
+                el.style.background = "#ffe6e6";
+                if(errorSpan) errorSpan.innerText = "⚠️ Inserire Qta e Colli";
+                valid = false;
+            }
+
+            if (qta > 0 || colli > 0) {
+                items.push({ id: el.dataset.id, nome: el.dataset.nome, qta, colli, prezzo: prz });
+            }
+        });
+
+        if (!valid) return;
+        if (items.length === 0) return alert("Inserisci almeno un articolo!");
+
+        const doc = {
+            id: currentEditingId || generaID(idCli),
+            tipo: currentType,
+            data: document.getElementById('doc-date-input').value,
+            targa: document.getElementById('targa-select').value,
+            clienteId: idCli || 'MAGAZZINO',
+            clienteNome: currentType === 'DDT' ? document.getElementById('cliente-search').value.split(' - ')[1] : 'CARICO',
+            zona: document.getElementById('selected-cliente-id').dataset.zona || '',
+            items: items
         };
 
-        function logout() {
-            if(confirm("Vuoi tornare alla pagina di login?")) {
-                showPage('login-screen');
-            }
+        const idx = ddtSalvati.findIndex(d => d.id === doc.id);
+        if(idx > -1) ddtSalvati[idx] = doc; else ddtSalvati.push(doc);
+        
+        localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+        localStorage.setItem('ultima_targa', doc.targa);
+        showPage('dashboard');
+    }
+
+    function generaID(idCli) {
+        const u = document.getElementById('user').value.substring(0,3).toUpperCase();
+        const annoCorrente = new Date().getFullYear();
+        
+        // 1. Recuperiamo l'anno dell'ultimo documento creato
+        const ultimoAnnoSalvato = localStorage.getItem('ultimo_anno_prog');
+        
+        // 2. Recuperiamo il progressivo attuale
+        let prog = parseInt(localStorage.getItem('prog_doc') || '0');
+
+        // 3. LOGICA DI RESET: Se l'anno è diverso (o non esiste), ricomincia da 0
+        if (ultimoAnnoSalvato !== annoCorrente.toString()) {
+            prog = 0; 
+            // Aggiorniamo subito l'anno di riferimento nel sistema
+            localStorage.setItem('ultimo_anno_prog', annoCorrente.toString());
         }
 
-        function popolaZone() {
-            const container = document.getElementById('zona-grid-container');
-                const zoneList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '22'];
-                
-                container.innerHTML = zoneList.map(z => `
-                    <div class="zona-btn" id="btn-zona-${z}" onclick="toggleZona('${z}')">
-                        ${z}
+        // 4. Incrementiamo e salviamo il nuovo valore
+        prog++; 
+        localStorage.setItem('prog_doc', prog);
+        
+        const pFmt = prog.toString().padStart(5, '0');
+        const zona = document.getElementById('selected-cliente-id').dataset.zona || '00';
+
+        // 5. Restituiamo l'ID finale
+        if (currentType === 'DDT') {
+            return `${u}-${annoCorrente}-${zona}-${idCli}-${pFmt}`;
+        } else {
+            return `${u}-${annoCorrente}-${pFmt}`;
+        }
+    }
+
+    // --- INTERFACCIA UTENTE ---
+    function showPage(id) {
+        document.querySelectorAll('.page, #login-screen, #dashboard').forEach(p => p.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        
+        // Se stiamo entrando nell'editor, puliamo la barra di ricerca articoli
+        if (id === 'page-editor') {
+            const artSearch = document.getElementById('art-search');
+            if (artSearch) artSearch.value = ''; 
+            // Non chiamiamo filterArticoli qui perché l'elenco viene già gestito da openNewDoc o caricaPerModifica
+        }
+        
+        if (id === 'page-modifica') renderListaModifica();
+    }
+
+    function renderListaModifica() {
+        const container = document.getElementById('lista-ddt-attesa');
+        container.innerHTML = ddtSalvati.map(d => {
+            const tot = d.tipo === 'DDT' ? d.items.reduce((acc, i) => acc + (i.qta * i.prezzo), 0).toFixed(2) : null;
+            return `
+                <div class="list-item" style="border-left:8px solid var(--primary-green); margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between"><strong>${d.id}</strong> <span>${d.tipo}</span></div>
+                    <div>Cod. ${d.clienteId} - <strong>${d.clienteNome}</strong></div>
+                    <div style="font-size:12px">Articoli: ${d.items.length} ${tot ? `| <strong>Tot: € ${tot}</strong>` : ''}</div>
+                    <div style="display:flex; gap:10px; margin-top:10px">
+                        <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:10px">MODIFICA</button>
+                        <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:10px; background:var(--primary-yellow)">STAMPA</button>
                     </div>
-                `).join('');        
-        }
-
-        function toggleZona(z) {
-            const btn = document.getElementById(`btn-zona-${z}`);
-            const index = zoneSelezionate.indexOf(z);
-
-            if (index > -1) {
-                // Se già selezionata, la rimuovo
-                zoneSelezionate.splice(index, 1);
-                btn.classList.remove('selected');
-            } else {
-                // Altrimenti la aggiungo
-                zoneSelezionate.push(z);
-                btn.classList.add('selected');
-            }
-        }
-
-        // MODIFICA: Gestione Login Multi-Zona
-        async function handleLogin() {
-            const u = document.getElementById('user').value;
-
-            if(!u) return alert("Inserisci nome utente");
-            if(zoneSelezionate.length === 0) return alert("Seleziona almeno una zona");
-
-            // Mostra un messaggio di caricamento (opzionale)
-            document.getElementById('user-display').innerText = "Caricamento anagrafiche...";
-
-            // Carica dinamicamente i file CSV delle zone selezionate
-            await caricaAnagraficheZone(zoneSelezionate);
-
-            zoneSelezionate.sort();
-            userZona = zoneSelezionate.join(', '); 
-
-            document.getElementById('user-display').innerText = `UTENTE: ${u.toUpperCase()} | ZONE: ${userZona}`;
-            showPage('dashboard');
-        }
-
-        function cercaClienteLive() {
-            const query = document.getElementById('cliente-search').value.toLowerCase();
-            const suggeriti = document.getElementById('clienti-suggeriti');
-            
-            if (query.length < 2) {
-                suggeriti.style.display = 'none';
-                return;
-            }
-
-            // Filtra anagrafiche per nome o ID
-            const matches = anagrafiche.filter(a => 
-                a.nome.toLowerCase().includes(query) || a.id.includes(query)
-            ).slice(0, 10); // Mostra solo i primi 10 per velocità
-
-            if (matches.length > 0) {
-                // Nella funzione cercaClienteLive
-                suggeriti.innerHTML = matches.map(a => `
-                    <div onclick="selezionaCliente('${a.id}', '${a.nome.replace(/'/g, "\\'")}', '${a.zonaVera}')" 
-                        style="padding: 15px; border-bottom: 1px solid #eee; cursor: pointer;">
-                        <div style="font-weight: bold; color: var(--primary-blue);">${a.id} - ${a.nome}</div>
-                        <div style="font-size: 13px; color: #666;">
-                            Loc: <strong>${a.localita}</strong> | Zona: ${a.zonaVera}
-                        </div>
-                    </div>
-                `).join('');
-                suggeriti.style.display = 'block';
-            } else {
-                suggeriti.style.display = 'none';
-            }
-        }
-
-        function selezionaCliente(id, nome, zona) {
-            const inputVisuale = document.getElementById('cliente-search');
-            const inputNascosto = document.getElementById('selected-cliente-id');
-            
-            inputVisuale.value = `${id} - ${nome}`;
-            inputVisuale.disabled = true;
-            
-            inputNascosto.value = id;
-            inputNascosto.dataset.zona = zona; // <--- Qui salviamo il terzo campo
-            
-            document.getElementById('clienti-suggeriti').style.display = 'none';
-            document.getElementById('btn-reset-cliente').style.display = 'block';
-        }
-
-        function resetCliente() {
-            if(currentEditingId) return; // Impedisce il reset se siamo in modalità modifica
-            clienteSelezionato = null;
-            const input = document.getElementById('cliente-search');
-            input.value = '';
-            input.disabled = false;
-            input.style.background = "white";
-            document.getElementById('selected-cliente-id').value = '';
-            document.getElementById('btn-reset-cliente').style.display = 'none';
-            input.focus();
-        }
-
-        async function caricaCSVBase() {
-            try {
-                const resArt = await fetch('ANAPC00F_20260112 prodotti - Copia.csv');
-                articoli = (await resArt.text()).split('\n').slice(2).filter(r => r.includes('|')).map(row => {
-                    const c = row.split('|'); return { id: c[0], um: c[1], nome: c[3], prezzo: c[6] };
-                });
-                const resTar = await fetch('targhe.csv');
-                targhe = (await resTar.text()).split('\n').map(t => t.trim()).filter(t => t);
-            } catch (e) { console.error("Errore caricamento file base"); }
-        }
-
-        async function caricaAnagraficheZone(zoneArray) {
-            anagrafiche = []; // Reset lista anagrafiche
-            
-            for (const zona of zoneArray) {
-                try {
-                    const fileName = `anagrafiche_${zona}.csv`;
-                    const response = await fetch(fileName);
-                    if (!response.ok) {
-                        console.warn(`File non trovato: ${fileName}`);
-                        continue;
-                    }
-                    const text = await response.text();
-                    const righe = text.split('\n').slice(1); // Salta la prima riga (intestazione)
-                                        
-                    // Nella funzione caricaAnagraficheZone, modifica il mapping:
-                    const nuoviClienti = righe.filter(r => r.includes('|')).map(row => {
-                        const c = row.split('|');
-                        return { 
-                            id: c[0].trim(), 
-                            nome: c[3].trim(), 
-                            zonaVera: c[2].trim(),// Terzo campo
-                            localita: c[4] ? c[4].trim() : "" // <--- Quinto campo (LOCCL)
-                        };
-                    });
-                    
-                    anagrafiche = anagrafiche.concat(nuoviClienti);
-                } catch (e) {
-                    console.error(`Errore nel caricamento della zona ${zona}:`, e);
-                }
-            }
-            console.log(`Caricate ${anagrafiche.length} anagrafiche per le zone: ${zoneArray.join(', ')}`);
-        }
-        function renderTarghe() {
-            const s = document.getElementById('targa-select');
-            s.innerHTML = targhe.map(t => `<option value="${t}">${t}</option>`).join('');
-            if(localStorage.getItem('ultima_targa')) s.value = localStorage.getItem('ultima_targa');
-        }
-
-        function showPage(id) {
-            document.querySelectorAll('.page, #login-screen, #dashboard').forEach(p => p.classList.add('hidden'));
-            const target = document.getElementById(id);
-            if(target) target.classList.remove('hidden');
-            // MODIFICA: Pulizia ricerca al cambio pagina
-            if(id === 'page-editor') {
-                document.getElementById('art-search').value = '';
-                filterArticoli();
-            }
-            if(id === 'page-modifica') renderListaModifica();
-        }
-
-        function generaNumeroDocumento(prefix, zona, clienteId) {
-            let prog = parseInt(localStorage.getItem('prog_doc') || '0') + 1;
-            localStorage.setItem('prog_doc', prog);
-            
-            const progressivoFmt = prog.toString().padStart(5, '0');
-
-            if (currentType === 'DDT') {
-                // Formato DDT: UTE - ZONA - IDCLIENTE - PROG
-                return `${prefix}-${zona}-${clienteId}-${progressivoFmt}`;
-            } else {
-                // Formato CARICO: UTE - PROG
-                return `${prefix}-${progressivoFmt}`;
-            }
-        }
-
-        function openNewDoc(type) {
-            currentType = type;
-            currentEditingId = null;
-            document.getElementById('editing-info').innerText = "NUOVO: " + type;
-            document.getElementById('doc-date-input').valueAsDate = new Date();
-            
-            // Gestione Area Cliente
-            const areaCliente = document.getElementById('cliente-area');
-            if (type === 'DDT') {
-                areaCliente.classList.remove('hidden');
-                resetCliente(); // Usa la funzione di reset che abbiamo creato
-            } else {
-                areaCliente.classList.add('hidden');
-            }
-
-            // Reset ricerca articoli
-            document.getElementById('art-search').value = '';
-            
-            showPage('page-editor');
-            renderArticoli();
-        }
-
-        function renderArticoli(datiPreesistenti = null) {
-            const container = document.getElementById('articoli-list');
-            container.innerHTML = articoli.map(art => {
-                let qtaVal = "", colliVal = "", przVal = parseFloat(art.prezzo || 0).toFixed(2);
-                
-                if(datiPreesistenti) {
-                    const trovato = datiPreesistenti.find(r => r.id === art.id);
-                    if(trovato) {
-                        qtaVal = trovato.qta;
-                        colliVal = trovato.colli || "";
-                        przVal = trovato.prezzo;
-                    }
-                }
-
-                return `
-                <div class="list-item" data-id="${art.id}" data-nome="${art.nome}">
-                    <div class="item-header">${art.id} ${art.nome}</div>
-                    <div class="input-row">
-                        ${currentType === 'CARICO' ? `
-                            <div class="qty-container">
-                                <label>COLLI</label>
-                                <input type="number" class="large-input colli-in" value="${colliVal}" onfocus="this.select()" oninput="pulisciErrore(this)">
-                            </div>
-                            <div class="qty-container">
-                                <label>QUANTITÀ ${art.um}</label>
-                                <input type="number" step="0.001" class="large-input qta-in" value="${parseFloat(qtaVal || 0).toFixed(3)}" onfocus="this.select()" oninput="pulisciErrore(this)">
-                            </div>
-                        ` : `
-                            <div class="qty-container">
-                                <label>QUANTITÀ ${art.um}</label>
-                                <input type="number" step="0.001" class="large-input qta-in" value="${parseFloat(qtaVal || 0).toFixed(3)}" onfocus="this.select()" oninput="pulisciErrore(this)">
-                            </div>
-                            <div class="qty-container">
-                                <label>PREZZO €</label>
-                                <input type="number" step="0.01" class="large-input prz-in" value="${parseFloat(przVal || 0).toFixed(2)}">
-                            </div>
-                        `}
-                    </div>
-                    <span class="error-msg" style="color:red; font-size:11px; font-weight:bold; display:block; margin-top:5px; height:15px;"></span>
                 </div>`;
-            }).join('');
-        }
+        }).join('');
+    }
 
-        function pulisciErrore(inputElement) {
-            const riga = inputElement.closest('.list-item');
-            if (riga) {
-                // Rimuove il colore rosso
-                riga.style.background = "white"; 
-                // Cerca lo span che abbiamo aggiunto sopra e svuota il testo
-                const msg = riga.querySelector('.error-msg');
-                if (msg) msg.innerText = ""; 
-            }
-        }
+    function cercaClienteLive() {
+        const q = document.getElementById('cliente-search').value.toLowerCase();
+        const sug = document.getElementById('clienti-suggeriti');
+        if (q.length < 2) return sug.style.display = 'none';
 
-        function salvaInLocale() {
-            document.querySelectorAll('.list-item').forEach(el => el.style.background = "white");
+        const matches = anagraficheClienti.filter(a => a.nome.toLowerCase().includes(q) || a.id.includes(q)).slice(0, 10);
+        sug.innerHTML = matches.map(a => `
+            <div onclick="selezionaCliente('${a.id}', '${a.nome.replace(/'/g, "\\'")}', '${a.zona}')" style="padding:15px; border-bottom:1px solid #eee;">
+                <strong>${a.id}</strong> - ${a.nome} <br><small>${a.localita}</small>
+            </div>`).join('');
+        sug.style.display = matches.length ? 'block' : 'none';
+    }
 
-            // 1. Recuperiamo l'ID del cliente dal campo nascosto
-            const campoNascosto = document.getElementById('selected-cliente-id');
-            const idCli = campoNascosto.value;
-            const zonaDati = campoNascosto.dataset.zona; // Recupera il valore salvato sopra
-    
-            // 2. Controllo obbligatorietà per DDT
-            if(currentType === 'DDT' && !idCli) return alert("ERRORE: Seleziona un cliente!");
+    function selezionaCliente(id, nome, zona) {
+        const v = document.getElementById('cliente-search');
+        const n = document.getElementById('selected-cliente-id');
+        v.value = `${id} - ${nome}`; v.disabled = true;
+        n.value = id; n.dataset.zona = zona;
+        document.getElementById('clienti-suggeriti').style.display = 'none';
+        document.getElementById('btn-reset-cliente').style.display = 'block';
+    }
 
-            const items = [];
-            document.querySelectorAll('.list-item').forEach(el => {
-                // Recuperiamo i riferimenti agli input
-                const inputQta = el.querySelector('.qta-in');
-                const inputColli = el.querySelector('.colli-in');
-                const inputPrz = el.querySelector('.prz-in');
-                erroreValidazione = false;
+    function resetCliente() {
+        const v = document.getElementById('cliente-search');
+        v.value = ''; v.disabled = false;
+        document.getElementById('selected-cliente-id').value = '';
+        document.getElementById('btn-reset-cliente').style.display = 'none';
+    }
 
-                // Leggiamo i valori solo se l'input esiste, altrimenti usiamo 0
-                const qta = inputQta ? parseFloat(inputQta.value) : 0;
-                const colli = inputColli ? parseInt(inputColli.value) : 0;
-                const prezzo = inputPrz ? parseFloat(inputPrz.value) : 0; // <--- CORREZIONE: controllo se esiste
-                
-                const errorSpan = el.querySelector('.error-msg');
-                const nomeArt = el.dataset.nome;
+    function pulisciErrore(el) {
+        const r = el.closest('.list-item');
+        r.style.background = "white";
+        const m = r.querySelector('.error-msg');
+        if(m) m.innerText = "";
+    }
 
-                if (currentType === 'CARICO') {
-                    let messaggio = "";
-                    if (qta > 0 && colli <= 0) messaggio = "⚠️ Inserire anche i Colli";
-                    if (colli > 0 && qta <= 0) messaggio = "⚠️ Inserire anche la Quantità";
-
-                    if (messaggio) {
-                        el.style.background = "#ffe6e6";
-                        if (errorSpan) errorSpan.innerText = messaggio;
-                        erroreValidazione = true;
-                        return;
-                    }
-                }
-
-                if (qta > 0 || colli > 0) {
-                    items.push({
-                        id: el.dataset.id,
-                        nome: nomeArt,
-                        qta: parseFloat(qta.toFixed(3)),
-                        colli: colli,
-                        prezzo: parseFloat(prezzo.toFixed(2))
-                    });
-                }
-            });
-
-            if (erroreValidazione) return; // Blocca il salvataggio se c'è un errore
-            if (items.length === 0) return alert("Inserisci almeno un articolo!");
-
-            if(items.length === 0) return alert("Inserisci almeno un articolo!");
-
-            let docId = currentEditingId;
-            if(!docId) {
-                const nomeUtente = document.getElementById('user').value || "XXX";
-                const prefix = nomeUtente.substring(0, 3).toUpperCase();
-
-                if (currentType === 'DDT') {
-                    const nomeUtente = document.getElementById('user').value || "XXX";
-                    const prefix = nomeUtente.substring(0, 3).toUpperCase();
-                    
-                    // Ora zonaDati contiene il terzo campo del CSV
-                    docId = generaNumeroDocumento(prefix, zonaDati, idCli);
-                } else {
-                    docId = generaNumeroDocumento(prefix);
-                }
-            }
-
-            const doc = {
-                id: docId,
-                tipo: currentType,
-                data: document.getElementById('doc-date-input').value,
-                targa: document.getElementById('targa-select').value,
-                clienteId: idCli || 'MAGAZZINO',
-                clienteNome: currentType === 'DDT' ? document.getElementById('cliente-search').value.split(' - ')[1] : 'CARICO',
-                items: items
-            };
-
-            const idx = ddtSalvati.findIndex(d => d.id === docId);
-            if(idx > -1) ddtSalvati[idx] = doc; else ddtSalvati.push(doc);
-            
-            localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
-            showPage('dashboard');
-        }
-
-        function renderListaModifica() {
-            const c = document.getElementById('lista-ddt-attesa');
-            if (!c) return;
-
-            c.innerHTML = ddtSalvati.map(d => {
-                const dataParti = d.data.split('-');
-                const dataIta = `${dataParti[2]}/${dataParti[1]}/${dataParti[0]}`;
-                
-                let totaleGenerale = 0;
-                if (d.tipo === 'DDT') {
-                    totaleGenerale = d.items.reduce((acc, item) => {
-                        return acc + (parseFloat(item.qta) * parseFloat(item.prezzo || 0));
-                    }, 0);
-                }
-
-                return `
-                    <div style="background:white; padding:15px; margin-bottom:15px; border-radius:10px; border-left:8px solid var(--primary-green); box-shadow: 0 2px 8px rgba(0,0,0,0.1)">
-                        <div style="display:flex; justify-content:space-between; align-items: center;">
-                            <strong>${d.id}</strong>
-                            <span style="font-size:12px; background:#eee; padding:2px 8px; border-radius:4px; font-weight:bold;">${d.tipo}</span>
-                        </div>
-                        
-                        <div style="margin: 10px 0;">
-                            <div style="font-size: 13px; color: var(--primary-blue); font-weight: bold;">
-                                Cod. Cliente: ${d.clienteId}
-                            </div>
-                            <div style="font-weight:bold; color: #333; font-size: 16px; line-height: 1.2;">
-                                ${d.clienteNome}
-                            </div>
-                            
-                            <div style="color: #666; font-size: 13px; margin-top: 6px;">
-                                Data: <strong>${dataIta}</strong> | Targa: ${d.targa}
-                            </div>
-                        </div>
-
-                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef; margin: 15px 0;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="color: #666; font-size: 13px;">Articoli: ${d.items.length}</span>
-                                ${d.tipo === 'DDT' ? `
-                                    <strong style="color: #2c3e50; font-size: 16px;">€ ${totaleGenerale.toFixed(2)}</strong>
-                                ` : ''}
-                            </div>
-                        </div
-
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:12px; background:#fff; border:1px solid #ddd; border-radius:8px; font-weight:bold; color: #555;">MODIFICA</button>
-                            <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:12px; background:var(--primary-yellow); border:none; border-radius:8px; font-weight:bold; color: #000;">STAMPA</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function caricaPerModifica(id) {
-            const doc = ddtSalvati.find(d => d.id === id);
-            currentEditingId = id;
-            currentType = doc.tipo;
-            
-            showPage('page-editor');
-            document.getElementById('editing-info').innerText = "MODIFICA: " + id;
-            document.getElementById('doc-date-input').value = doc.data;
-            document.getElementById('targa-select').value = doc.targa;
-            
-            const areaCliente = document.getElementById('cliente-area');
-            if (doc.tipo === 'DDT') {
-                areaCliente.classList.remove('hidden');
-                
-                // Popola i nuovi campi di ricerca cliente
-                const input = document.getElementById('cliente-search');
-                input.value = `${doc.clienteId} - ${doc.clienteNome}`;
-                input.disabled = true; // Blocca modifica
-                input.style.background = "#e9f5ec";
-                
-                document.getElementById('selected-cliente-id').value = doc.clienteId;
-                document.getElementById('btn-reset-cliente').style.display = 'none'; // Nascondi X in modifica
-            } else {
-                areaCliente.classList.add('hidden');
-            }
-
-            // Reset ricerca articoli
-            document.getElementById('art-search').value = '';
-            renderArticoli(doc.items);
-        }
-
-        async function stampaEInvia(id) {
-            alert("Stampato!");
-            ddtSalvati = ddtSalvati.filter(d => d.id !== id);
-            localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
-            renderListaModifica();
-        }
-
-        function renderAnagrafiche() {
-            const s = document.getElementById('cliente-select');
-            s.innerHTML = '<option value="">-- SELEZIONA UN CLIENTE --</option>' + 
-                          anagrafiche.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
-        }
-
-        function filterArticoli() {
-            const q = document.getElementById('art-search').value.toLowerCase();
-            document.querySelectorAll('.list-item').forEach(item => {
-                item.style.display = item.dataset.nome.toLowerCase().includes(q) ? 'flex' : 'none';
-            });
-        }
-
-        function clearSearch() {
-            const searchInput = document.getElementById('art-search');
-            searchInput.value = '';
-            searchInput.focus(); // Riporta il focus per scrivere subito
-            filterArticoli();    // Mostra di nuovo tutti gli articoli
-        }
-
-        function filterAnagrafiche() {
-            const query = document.getElementById('ana-search').value.toLowerCase();
-            const select = document.getElementById('cliente-select');
-            const options = select.options;
-            let firstFound = false;
-
-            for (let i = 1; i < options.length; i++) { // Parte da 1 per saltare l'opzione vuota
-                const text = options[i].text.toLowerCase();
-                const match = text.includes(query);
-                options[i].style.display = match ? 'block' : 'none';
-                if (match && !firstFound) {
-                    select.value = options[i].value; // Seleziona automaticamente il primo risultato
-                    firstFound = true;
-                }
-            }
-        }
-
-        function clearAnaSearch() {
-            document.getElementById('ana-search').value = '';
-            const options = document.getElementById('cliente-select').options;
-            for (let i = 0; i < options.length; i++) options[i].style.display = 'block';
-            document.getElementById('cliente-select').value = "";
-        }
-    </script>
+    function clearSearch() { document.getElementById('art-search').value = ''; filterArticoli(); }
+    function renderTarghe() {
+        const s = document.getElementById('targa-select');
+        s.innerHTML = targhe.map(t => `<option value="${t}">${t}</option>`).join('');
+        if(localStorage.getItem('ultima_targa')) s.value = localStorage.getItem('ultima_targa');
+    }
+    async function stampaEInvia(id) {
+        alert("Documento inviato alla stampa!");
+        ddtSalvati = ddtSalvati.filter(d => d.id !== id);
+        localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+        renderListaModifica();
+    }
+    function logout() { if(confirm("Tornare al login?")) showPage('login-screen'); }
+</script>
 </body>
 </html>
