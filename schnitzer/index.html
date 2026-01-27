@@ -240,7 +240,7 @@
                 const text = await res.text();
                 const nuovi = text.split('\n').slice(1).filter(r => r.includes('|')).map(row => {
                     const c = row.split('|');
-                    return { id: c[0].trim(), nome: c[3].trim(), zona: c[2].trim(), localita: c[4]?.trim() || "" };
+                    return { id: c[0].trim(), nome: c[3].trim(), zona: c[2].trim(), rg2: c[4]?.trim() || "" , localita: c[6]?.trim() || "" };
                 });
                 anagraficheClienti = anagraficheClienti.concat(nuovi);
             } catch (e) { console.error(`Errore zona ${zona}`, e); }
@@ -447,7 +447,7 @@
         const matches = anagraficheClienti.filter(a => a.nome.toLowerCase().includes(q) || a.id.includes(q)).slice(0, 10);
         sug.innerHTML = matches.map(a => `
             <div onclick="selezionaCliente('${a.id}', '${a.nome.replace(/'/g, "\\'")}', '${a.zona}')" style="padding:15px; border-bottom:1px solid #eee;">
-                <strong>${a.id}</strong> - ${a.nome} <br><small>${a.localita}</small>
+                <strong>${a.id}</strong> - ${a.nome} <br><small>${a.rg2} - ${a.localita}</small>
             </div>`).join('');
         sug.style.display = matches.length ? 'block' : 'none';
     }
