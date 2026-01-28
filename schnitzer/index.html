@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -281,10 +282,30 @@
 
     function filterArticoli() {
         const q = document.getElementById('art-search').value.toLowerCase();
+        const container = document.getElementById('articoli-list');
+        
+        // 1. Gestione visibilità articoli già presenti nel DOM
+        let trovatiNelDom = false;
         document.querySelectorAll('#articoli-list .list-item').forEach(item => {
             const match = item.dataset.nome.toLowerCase().includes(q) || item.dataset.id.toLowerCase().includes(q);
             item.style.display = match ? 'flex' : 'none';
+            if (match) trovatiNelDom = true;
         });
+
+        // 2. Se stiamo cercando (almeno 2 caratteri) e non c'è match nel DOM, cerchiamo in anagrafica
+        if (q.length >= 2 && !trovatiNelDom) {
+            const nuoviMatch = anagraficaArticoli.filter(a => 
+                a.nome.toLowerCase().includes(q) || a.id.toLowerCase().includes(q)
+            ).slice(0, 5); // Limitiamo a 5 risultati per performance
+
+            nuoviMatch.forEach(art => {
+                // Controlliamo che non sia già stato aggiunto (per evitare duplicati)
+                if (!document.querySelector(`#articoli-list .list-item[data-id="${art.id}"]`)) {
+                    const nuovaRiga = creaRigaArticolo(art, 0, 0, art.prezzoBase || 0);
+                    container.insertAdjacentHTML('beforeend', nuovaRiga);
+                }
+            });
+        }
     }
 
     // --- GESTIONE DOCUMENTI ---
@@ -304,6 +325,35 @@
         renderArticoli(); // Mostra l'intera anagrafica
     }
 
+    function puliziaDocumentiVecchi() {
+        const OGGI = new Date();
+        const LIMITE_GIORNI = 3;
+        let contatoreVecchi = 0;
+
+        // Filtriamo i documenti
+        const documentiFiltrati = ddtSalvati.filter(doc => {
+            const dataDoc = new Date(doc.data);
+            // Calcolo differenza in millisecondi e conversione in giorni
+            const diffTempo = OGGI - dataDoc;
+            const diffGiorni = diffTempo / (1000 * 60 * 60 * 24);
+
+            if (diffGiorni > LIMITE_GIORNI) {
+                contatoreVecchi++;
+                return false; // Elimina il documento
+            }
+            return true; // Mantieni il documento
+        });
+
+        if (contatoreVecchi > 0) {
+            // AVVISO TEMPORANEO (da togliere in produzione)
+            alert(`⚠️ AVVISO DEBUG: Rilevati ${contatoreVecchi} documenti vecchi (più di 3 giorni). Saranno eliminati.`);
+
+            // Aggiorniamo lo stato e il localStorage
+            ddtSalvati = documentiFiltrati;
+            localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+        }
+    }
+
     function caricaPerModifica(id) {
         const doc = ddtSalvati.find(d => d.id === id);
         if (!doc) return;
@@ -311,12 +361,12 @@
         currentEditingId = doc.id;
         currentType = doc.tipo;
         
-        // Pulizia barra ricerca prima di mostrare la pagina
-        document.getElementById('art-search').value = '';
-        
         showPage('page-editor');
         document.getElementById('editing-info').innerText = "MODIFICA: " + doc.id;
         
+        // Reset barra ricerca
+        document.getElementById('art-search').value = '';
+
         // Imposta Cliente
         const inputVisuale = document.getElementById('cliente-search');
         const inputNascosto = document.getElementById('selected-cliente-id');
@@ -325,7 +375,7 @@
         inputNascosto.value = doc.clienteId;
         inputNascosto.dataset.zona = doc.zona || "";
 
-        // Renderizziamo SOLO gli articoli che hanno valori nel documento
+        // Renderizza SOLO gli articoli salvati
         renderArticoli(doc.items, true);
     }
 
@@ -412,6 +462,11 @@
         document.querySelectorAll('.page, #login-screen, #dashboard').forEach(p => p.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
         
+        // Trigger pulizia: Solo se entriamo nell'editor per un NUOVO CARICO
+        if (id === 'page-editor' && currentType === 'CARICO' && currentEditingId === null) {
+            puliziaDocumentiVecchi();
+        }
+
         // Se stiamo entrando nell'editor, puliamo la barra di ricerca articoli
         if (id === 'page-editor') {
             const artSearch = document.getElementById('art-search');
