@@ -358,24 +358,19 @@
         const doc = ddtSalvati.find(d => d.id === id);
         if (!doc) return;
 
+        // CONTROLLO BLOCCO: Se stampato, impedisci la modifica
+        if (doc.stampato) {
+            alert("ATTENZIONE: Questo documento è già stato stampato e non può più essere modificato.");
+            return;
+        }
+
         currentEditingId = doc.id;
         currentType = doc.tipo;
         
-        showPage('page-editor');
-        document.getElementById('editing-info').innerText = "MODIFICA: " + doc.id;
-        
-        // Reset barra ricerca
         document.getElementById('art-search').value = '';
-
-        // Imposta Cliente
-        const inputVisuale = document.getElementById('cliente-search');
-        const inputNascosto = document.getElementById('selected-cliente-id');
-        inputVisuale.value = `${doc.clienteId} - ${doc.clienteNome}`;
-        inputVisuale.disabled = true;
-        inputNascosto.value = doc.clienteId;
-        inputNascosto.dataset.zona = doc.zona || "";
-
-        // Renderizza SOLO gli articoli salvati
+        showPage('page-editor');
+        
+        // ... resto del codice per caricare cliente e articoli ...
         renderArticoli(doc.items, true);
     }
 
@@ -479,16 +474,33 @@
 
     function renderListaModifica() {
         const container = document.getElementById('lista-ddt-attesa');
+        if (!container) return;
+
         container.innerHTML = ddtSalvati.map(d => {
             const tot = d.tipo === 'DDT' ? d.items.reduce((acc, i) => acc + (i.qta * i.prezzo), 0).toFixed(2) : null;
+            
+            // Stile condizionale: grigio se stampato, verde se modificabile
+            const borderCol = d.stampato ? '#6c757d' : 'var(--primary-green)';
+            const opacity = d.stampato ? '0.7' : '1';
+
             return `
-                <div class="list-item" style="border-left:8px solid var(--primary-green); margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between"><strong>${d.id}</strong> <span>${d.tipo}</span></div>
+                <div class="list-item" style="border-left:8px solid ${borderCol}; margin-bottom:10px; opacity: ${opacity}">
+                    <div style="display:flex; justify-content:space-between">
+                        <strong>${d.id}</strong> 
+                        <span>${d.tipo} ${d.stampato ? '✅ STAMPATO' : '📝 BOZZA'}</span>
+                    </div>
                     <div>Cod. ${d.clienteId} - <strong>${d.clienteNome}</strong></div>
                     <div style="font-size:12px">Articoli: ${d.items.length} ${tot ? `| <strong>Tot: € ${tot}</strong>` : ''}</div>
+                    
                     <div style="display:flex; gap:10px; margin-top:10px">
-                        <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:10px">MODIFICA</button>
-                        <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:10px; background:var(--primary-yellow)">STAMPA</button>
+                        ${!d.stampato ? `
+                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:10px">MODIFICA</button>
+                        ` : `
+                            <button disabled style="flex:1; padding:10px; background:#eee; color:#999; border:1px solid #ccc;">NON MODIFICABILE</button>
+                        `}
+                        <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:10px; background:var(--primary-yellow)">
+                            ${d.stampato ? 'RISTAMPA' : 'STAMPA'}
+                        </button>
                     </div>
                 </div>`;
         }).join('');
@@ -537,12 +549,135 @@
         if(localStorage.getItem('ultima_targa')) s.value = localStorage.getItem('ultima_targa');
     }
     async function stampaEInvia(id) {
-        alert("Documento inviato alla stampa!");
-        ddtSalvati = ddtSalvati.filter(d => d.id !== id);
+        //inviaDatiAlServer(); da vedere quando inviare
+
+        // Cerchiamo il documento nell'array
+        const doc = ddtSalvati.find(d => d.id === id);
+        if (!doc) return;
+
+        // Simulazione invio stampa
+        alert(`Documento ${id} inviato alla stampa!\nDa questo momento non sarà più modificabile.`);
+
+        // Segniamo il documento come stampato
+        doc.stampato = true;
+
+        // Salviamo lo stato aggiornato
         localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+        
+        // Torniamo alla dashboard o rinfreschiamo la lista
         renderListaModifica();
     }
+    
+    // Formatta Data in AAAAMMGG
+    function formatDataCSV(dataISO) {
+        return dataISO.replace(/-/g, '');
+    }
+
+    // Formatta Ora in HHMMSS
+    function formatOraCSV() {
+        const ora = new Date();
+        return ora.getHours().toString().padStart(2, '0') +
+            ora.getMinutes().toString().padStart(2, '0') +
+            ora.getSeconds().toString().padStart(2, '0');
+    }
+
+    // Formatta i numeri con virgola e decimali fissi (es: 0,50000)
+    function formatNumCSV(num, decimali) {
+        return parseFloat(num).toFixed(decimali).replace('.', ',');
+    }
+
+    function preparaFilesPerServer() {
+        let csvTestatina = "";
+        let csvArticoli = "";
+
+        // Filtriamo solo i DDT (escludiamo i Carichi)
+        const soloDDT = ddtSalvati.filter(d => d.tipo === 'DDT');
+
+        if (soloDDT.length === 0) {
+            alert("Nessun DDT presente da inviare.");
+            return null;
+        }
+
+        soloDDT.forEach(doc => {
+            // --- LOGICA TESTATINA ---
+            // Struttura: T|OC|serie|numero|codiceCliente|codiceCliente|data|ora
+            
+            const serie = "1";
+            // Estraiamo il numero documento dall'ID (l'ultima parte dopo l'ultimo trattino)
+            const numeroDoc = doc.id.split('-').pop(); 
+            const dataFmt = formatDataCSV(doc.data);
+            const oraFmt = formatOraCSV();
+            
+            // MODIFICA: Usiamo il codice cliente (es. 877) invece del nome
+            const codiceCli = doc.clienteId; 
+
+            // T | OC | serie | numero | destinatario1 | destinatario2 | data | ora
+            csvTestatina += `T|OC|${serie}|${numeroDoc}|${codiceCli}|${codiceCli}|${dataFmt}|${oraFmt}\n`;
+
+            // --- LOGICA ARTICOLI ---
+            // Struttura: R|OC|data|serie|numero|codArt|qta|prezzo|0|0|UM|0
+            doc.items.forEach(item => {
+                // Cerchiamo l'UM nell'anagrafica caricata per quell'articolo
+                const infoArt = anagraficaArticoli.find(a => a.id === item.id);
+                const um = infoArt ? infoArt.um : 'KG';
+
+                const riga = [
+                    "R",
+                    "OC",
+                    dataFmt,
+                    serie,
+                    numeroDoc,
+                    item.id,
+                    formatNumCSV(item.qta, 5),
+                    formatNumCSV(item.prezzo, 5),
+                    "0,00",
+                    um,
+                ];
+                csvArticoli += riga.join('|') + "|\n";
+            });
+        });
+
+        return {
+            testatina: csvTestatina,
+            articoli: csvArticoli
+        };
+    }
+
+    async function inviaDatiAlServer() {
+        const files = preparaFilesPerServer();
+        if (!files) return;
+
+        // Messaggio di conferma con anteprima (Debug)
+        console.log("File Testatina:\n", files.testatina);
+        console.log("File Articoli:\n", files.articoli);
+
+        const formData = new FormData();
+        formData.append('testatina', new Blob([files.testatina], { type: 'text/csv' }), 'testatine.csv');
+        formData.append('articoli', new Blob([files.articoli], { type: 'text/csv' }), 'articoli.csv');
+
+        debugger;
+
+        try {
+            // Sostituiremo 'upload.php' con il tuo vero endpoint
+            const response = await fetch('upload.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("✅ File inviati con successo al server!");
+                // Qui potresti voler segnare i documenti come 'Inviati'
+            } else {
+                throw new Error("Errore durante l'invio");
+            }
+        } catch (error) {
+            alert("❌ Errore di connessione: i file non sono stati inviati.");
+            console.error(error);
+        }
+    }
+
     function logout() { if(confirm("Tornare al login?")) showPage('login-screen'); }
+
 </script>
 </body>
 </html>
