@@ -110,8 +110,18 @@
     <div id="login-screen">
         <img src="logo.jpg" alt="Logo" style="width:100px; margin-bottom:20px;" onerror="this.src='https://via.placeholder.com/100'">
         <div class="login-field"><label>UTENTE</label><input type="text" id="user" placeholder="Inserisci nome"></div>
-        <div class="login-field"><label>PASSWORD</label><input type="password" id="pass" placeholder="********"></div>
-        <div class="login-field">
+        <div class="login-field"><label>PASSWORD</label>
+            <div style="position: relative;">
+            <input type="password" id="pass" placeholder="********" 
+                style="width:100%; padding:12px; padding-right: 45px;">
+            <span id="togglePassword" onclick="togglePasswordVisibility()" 
+                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                        cursor: pointer; font-size: 20px; user-select: none;">
+                👁️
+            </span>
+        </div>
+    </div>
+    <div class="login-field">
             <label>ZONE</label>
             <div id="zona-grid-container" class="zona-grid"></div>
         </div>
@@ -186,6 +196,7 @@
     let currentEditingId = null;
     let currentType = '';
     let zoneSelezionate = [];
+    let listaUtentiAutorizzati = [];
 
     // --- CARICAMENTO INIZIALE ---
     window.onload = async () => {
@@ -194,6 +205,35 @@
         renderTarghe();
     };
 
+    function togglePasswordVisibility() {
+        const passInput = document.getElementById('pass');
+        const toggleIcon = document.getElementById('togglePassword');
+        
+        if (passInput.type === "password") {
+            passInput.type = "text";
+            toggleIcon.innerText = "🔒"; // Icona lucchetto quando è visibile
+        } else {
+            passInput.type = "password";
+            toggleIcon.innerText = "👁️"; // Icona occhio quando è nascosta
+        }
+    }
+
+    // Aggiungi questo all'interno di window.onload o come funzione globale
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginFields = ['user', 'pass'];
+        
+        loginFields.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        handleLogin();
+                    }
+                });
+            }
+        });
+    });
+    
     async function caricaDatiBase() {
         try {
             // Caricamento Articoli
@@ -206,6 +246,19 @@
             // Caricamento Targhe
             const resTar = await fetch('targhe.csv');
             targhe = (await resTar.text()).split('\n').map(t => t.trim()).filter(t => t);
+            
+            const resUtenti = await fetch('user.csv');
+            if (resUtenti.ok) {
+                const textUtenti = await resUtenti.text();
+                listaUtentiAutorizzati = textUtenti.split('\n').filter(r => r.includes('|')).map(row => {
+                    const c = row.split('|');
+                    return { 
+                        user: c[0].trim().toUpperCase(), 
+                        pass: c[1].trim(), 
+                        nome: c[2]?.trim() || c[0].trim() 
+                    };
+                });
+            }
         } catch (e) { console.error("Errore caricamento file base:", e); }
     }
 
@@ -224,11 +277,28 @@
     }
 
     async function handleLogin() {
-        const u = document.getElementById('user').value;
-        if(!u || zoneSelezionate.length === 0) return alert("Inserisci utente e seleziona almeno una zona");
+        if (event) event.preventDefault();
+        const uInput = document.getElementById('user').value.trim().toUpperCase();
+        const pInput = document.getElementById('pass')?.value; // Assicurati di avere un id="pass" nell'HTML
         
+        if (zoneSelezionate.length === 0) {
+            return alert("Seleziona almeno una zona prima di accedere.");
+        }
+
+        // Ricerca dell'utente nella lista caricata dal CSV
+        const utenteTrovato = listaUtentiAutorizzati.find(u => u.user === uInput && u.pass === pInput);
+
+        if (!utenteTrovato) {
+            return alert("Credenziali non valide. Riprova.");
+        }
+
+        // Se arriviamo qui, il login è corretto
         await caricaAnagraficheZone(zoneSelezionate);
-        document.getElementById('user-display').innerText = `UTENTE: ${u.toUpperCase()} | ZONE: ${zoneSelezionate.sort().join(', ')}`;
+        
+        // Usiamo il nome completo dell'utente se disponibile
+        document.getElementById('user-display').innerText = 
+            `OPERATORE: ${utenteTrovato.nome} | ZONE: ${zoneSelezionate.sort().join(', ')}`;
+        
         showPage('dashboard');
     }
 
@@ -358,19 +428,45 @@
         const doc = ddtSalvati.find(d => d.id === id);
         if (!doc) return;
 
-        // CONTROLLO BLOCCO: Se stampato, impedisci la modifica
-        if (doc.stampato) {
-            alert("ATTENZIONE: Questo documento è già stato stampato e non può più essere modificato.");
+        // MODIFICA: Il blocco scatta SOLO per i DDT stampati.
+        // Se è un CARICO, il controllo viene saltato e la modifica procede.
+        if (doc.tipo === 'DDT' && doc.stampato) {
+            alert("ATTENZIONE: Questo DDT è già stato stampato e non può più essere modificato.");
             return;
         }
 
+        // Impostiamo le variabili di stato per l'editor
         currentEditingId = doc.id;
         currentType = doc.tipo;
         
+        // Pulizia e apertura pagina
         document.getElementById('art-search').value = '';
         showPage('page-editor');
         
-        // ... resto del codice per caricare cliente e articoli ...
+        // Aggiorniamo il titolo nell'editor per dare un feedback
+        const infoTitolo = document.getElementById('editing-info');
+        if (infoTitolo) {
+            infoTitolo.innerText = doc.stampato ? 
+                `RETTIFICA ${doc.tipo}: ${doc.id}` : 
+                `MODIFICA ${doc.tipo}: ${doc.id}`;
+        }
+
+        // Caricamento dati cliente (solo se DDT)
+        const inputVisuale = document.getElementById('cliente-search');
+        const inputNascosto = document.getElementById('selected-cliente-id');
+        
+        if (doc.tipo === 'DDT') {
+            inputVisuale.value = `${doc.clienteId} - ${doc.clienteNome}`;
+            inputVisuale.disabled = true; // Impedisce di cambiare cliente su un DDT esistente
+            inputNascosto.value = doc.clienteId;
+        } else {
+            // Se è un carico, svuotiamo i campi cliente (non servono)
+            inputVisuale.value = "MAGAZZINO";
+            inputVisuale.disabled = true;
+            inputNascosto.value = "MAGAZZINO";
+        }
+
+        // Carica gli articoli nel modulo
         renderArticoli(doc.items, true);
     }
 
@@ -401,15 +497,21 @@
         if (!valid) return;
         if (items.length === 0) return alert("Inserisci almeno un articolo!");
 
+        // Se è un nuovo documento, creiamo un ID temporaneo 'TEMP-timestamp'
+        // Se è una modifica, manteniamo l'ID che ha già
+        const newId = currentEditingId || `TEMP-${Date.now()}`;
+        
         const doc = {
-            id: currentEditingId || generaID(idCli),
+            id: newId,
             tipo: currentType,
             data: document.getElementById('doc-date-input').value,
             targa: document.getElementById('targa-select').value,
             clienteId: idCli || 'MAGAZZINO',
             clienteNome: currentType === 'DDT' ? document.getElementById('cliente-search').value.split(' - ')[1] : 'CARICO',
             zona: document.getElementById('selected-cliente-id').dataset.zona || '',
-            items: items
+            items: items,
+            stampato: false,
+            numeroProgressivo: null
         };
 
         const idx = ddtSalvati.findIndex(d => d.id === doc.id);
@@ -420,36 +522,40 @@
         showPage('dashboard');
     }
 
-    function generaID(idCli) {
-        const u = document.getElementById('user').value.substring(0,3).toUpperCase();
+    function generaID(tipoDoc) {
+        // Recuperiamo l'utente e prendiamo le prime 2 lettere
+        const uInput = document.getElementById('user').value.trim();
+        const u = uInput.substring(0, 2).toUpperCase() || "XX";
+        
         const annoCorrente = new Date().getFullYear();
-        
-        // 1. Recuperiamo l'anno dell'ultimo documento creato
-        const ultimoAnnoSalvato = localStorage.getItem('ultimo_anno_prog');
-        
-        // 2. Recuperiamo il progressivo attuale
-        let prog = parseInt(localStorage.getItem('prog_doc') || '0');
+        const ultimoAnno = localStorage.getItem('ultimo_anno_prog');
 
-        // 3. LOGICA DI RESET: Se l'anno è diverso (o non esiste), ricomincia da 0
-        if (ultimoAnnoSalvato !== annoCorrente.toString()) {
-            prog = 0; 
-            // Aggiorniamo subito l'anno di riferimento nel sistema
+        // Reset annuale dei contatori
+        if (ultimoAnno !== annoCorrente.toString()) {
+            localStorage.setItem('prog_ddt', '0');
+            localStorage.setItem('prog_carico', '0');
             localStorage.setItem('ultimo_anno_prog', annoCorrente.toString());
         }
 
-        // 4. Incrementiamo e salviamo il nuovo valore
-        prog++; 
-        localStorage.setItem('prog_doc', prog);
-        
-        const pFmt = prog.toString().padStart(5, '0');
-        const zona = document.getElementById('selected-cliente-id').dataset.zona || '00';
+        let progressivo = 0;
+        let idFinale = "";
 
-        // 5. Restituiamo l'ID finale
-        if (currentType === 'DDT') {
-            return `${u}-${annoCorrente}-${zona}-${idCli}-${pFmt}`;
+        // Forza il confronto in maiuscolo per evitare errori di battitura
+        if (tipoDoc.toUpperCase() === 'DDT') {
+            progressivo = parseInt(localStorage.getItem('prog_ddt') || '0') + 1;
+            localStorage.setItem('prog_ddt', progressivo);
+            // Esempio: MA/00001
+            idFinale = u + "/" + progressivo.toString().padStart(5, '0');
         } else {
-            return `${u}-${annoCorrente}-${pFmt}`;
+            // Entra qui solo se è CARICO o qualsiasi altra cosa
+            progressivo = parseInt(localStorage.getItem('prog_carico') || '0') + 1;
+            localStorage.setItem('prog_carico', progressivo);
+            // Esempio: MA/00001/MAGAZZINO
+            idFinale = u + "/" + progressivo.toString().padStart(5, '0') + "/MAGAZZINO";
         }
+
+        console.log("Generato ID tipo:", tipoDoc, " -> ", idFinale); // Per debug in console
+        return idFinale;
     }
 
     // --- INTERFACCIA UTENTE ---
@@ -476,33 +582,41 @@
         const container = document.getElementById('lista-ddt-attesa');
         if (!container) return;
 
-        container.innerHTML = ddtSalvati.map(d => {
+        // Invertiamo l'ordine: gli ultimi inseriti appariranno per primi
+        const documentiOrdinati = ddtSalvati.slice().reverse();
+
+        container.innerHTML = documentiOrdinati.map(d => {
             const tot = d.tipo === 'DDT' ? d.items.reduce((acc, i) => acc + (i.qta * i.prezzo), 0).toFixed(2) : null;
             
             // Stile condizionale: grigio se stampato, verde se modificabile
             const borderCol = d.stampato ? '#6c757d' : 'var(--primary-green)';
             const opacity = d.stampato ? '0.7' : '1';
 
+            // Un doc di carico stampato permette ancora la modifica
+            const puoModificare = !d.stampato || d.tipo === 'CARICO';
+
+            const displayID = d.numeroProgressivo || `<span style="color:orange">PROVVISORIO</span>`;
+
             return `
                 <div class="list-item" style="border-left:8px solid ${borderCol}; margin-bottom:10px; opacity: ${opacity}">
                     <div style="display:flex; justify-content:space-between">
-                        <strong>${d.id}</strong> 
+                        <strong>${displayID}</strong> 
                         <span>${d.tipo} ${d.stampato ? '✅ STAMPATO' : '📝 BOZZA'}</span>
                     </div>
                     <div>Cod. ${d.clienteId} - <strong>${d.clienteNome}</strong></div>
                     <div style="font-size:12px">Articoli: ${d.items.length} ${tot ? `| <strong>Tot: € ${tot}</strong>` : ''}</div>
                     
                     <div style="display:flex; gap:10px; margin-top:10px">
-                        ${!d.stampato ? `
-                            <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:10px">MODIFICA</button>
-                        ` : `
-                            <button disabled style="flex:1; padding:10px; background:#eee; color:#999; border:1px solid #ccc;">NON MODIFICABILE</button>
-                        `}
-                        <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:10px; background:var(--primary-yellow)">
-                            ${d.stampato ? 'RISTAMPA' : 'STAMPA'}
-                        </button>
-                    </div>
-                </div>`;
+                    ${puoModificare ? `
+                        <button onclick="caricaPerModifica('${d.id}')" style="flex:1; padding:10px; border-radius:5px; border:1px solid #ccc; background: white;">MODIFICA</button>
+                    ` : `
+                        <button disabled style="flex:1; padding:10px; background:#eee; color:#999; border:1px solid #ccc; border-radius:5px;">BLOCCATO</button>
+                    `}
+                    <button onclick="stampaEInvia('${d.id}')" style="flex:1; padding:10px; background:var(--primary-yellow); border:none; border-radius:5px; font-weight:bold;">
+                        ${d.stampato ? 'RISTAMPA' : 'STAMPA'}
+                    </button>
+                </div>
+            </div>`;
         }).join('');
     }
 
@@ -555,8 +669,15 @@
         const doc = ddtSalvati.find(d => d.id === id);
         if (!doc) return;
 
+        // Se non ha ancora un numero progressivo (prima stampa), lo generiamo ora
+        if (!doc.numeroProgressivo) {
+            // Usiamo esplicitamente doc.tipo che abbiamo salvato nella funzione salvaInLocale
+            const nuovoID = generaID(doc.tipo); 
+            doc.numeroProgressivo = nuovoID;
+            doc.id = nuovoID; // Aggiorniamo l'id per non avere più il TEMP-
+        }
         // Simulazione invio stampa
-        alert(`Documento ${id} inviato alla stampa!\nDa questo momento non sarà più modificabile.`);
+        alert(`Documento ${doc.numeroProgressivo} inviato alla stampa!\nDa questo momento non sarà più modificabile.`);
 
         // Segniamo il documento come stampato
         doc.stampato = true;
@@ -587,7 +708,7 @@
     }
 
     function preparaFilesPerServer() {
-        let csvTestatina = "";
+        let csvTestata = "";
         let csvArticoli = "";
 
         // Filtriamo solo i DDT (escludiamo i Carichi)
@@ -599,7 +720,7 @@
         }
 
         soloDDT.forEach(doc => {
-            // --- LOGICA TESTATINA ---
+            // --- LOGICA TESTATA ---
             // Struttura: T|OC|serie|numero|codiceCliente|codiceCliente|data|ora
             
             const serie = "1";
@@ -612,7 +733,7 @@
             const codiceCli = doc.clienteId; 
 
             // T | OC | serie | numero | destinatario1 | destinatario2 | data | ora
-            csvTestatina += `T|OC|${serie}|${numeroDoc}|${codiceCli}|${codiceCli}|${dataFmt}|${oraFmt}\n`;
+            csvTestata += `T|OC|${serie}|${numeroDoc}|${codiceCli}|${codiceCli}|${dataFmt}|${oraFmt}\n`;
 
             // --- LOGICA ARTICOLI ---
             // Struttura: R|OC|data|serie|numero|codArt|qta|prezzo|0|0|UM|0
@@ -637,7 +758,7 @@
         });
 
         return {
-            testatina: csvTestatina,
+            testata: csvTestata,
             articoli: csvArticoli
         };
     }
@@ -647,11 +768,11 @@
         if (!files) return;
 
         // Messaggio di conferma con anteprima (Debug)
-        console.log("File Testatina:\n", files.testatina);
+        console.log("File Testata:\n", files.testata);
         console.log("File Articoli:\n", files.articoli);
 
         const formData = new FormData();
-        formData.append('testatina', new Blob([files.testatina], { type: 'text/csv' }), 'testatine.csv');
+        formData.append('testata', new Blob([files.testata], { type: 'text/csv' }), 'testata.csv');
         formData.append('articoli', new Blob([files.articoli], { type: 'text/csv' }), 'articoli.csv');
 
         debugger;
