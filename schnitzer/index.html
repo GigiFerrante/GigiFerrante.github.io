@@ -178,6 +178,12 @@
     </div>
 
     <div id="page-modifica" class="page hidden">
+        <div id="bulk-upload-container" style="padding: 10px; background: #f8f9fa; border-bottom: 1px solid #ddd; margin-bottom: 15px;">
+            <button onclick="inviaTuttiISospesi()" id="btn-invia-tutti" 
+                    style="width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; display: none;">
+                📤 INVIA TUTTI I SOSPESI (<span id="count-sospesi">0</span>)
+            </button>
+        </div>
         <div style="padding: 15px;">
             <h3 style="margin-top:0">Documenti in attesa</h3>
             <div id="lista-ddt-attesa"></div>
@@ -578,14 +584,43 @@
         if (id === 'page-modifica') renderListaModifica();
     }
 
+    async function forzaInvio(id) {
+        const doc = ddtSalvati.find(d => d.id === id);
+        if (!doc) return;
+
+        const successo = await inviaSingoloDocumento(doc);
+        if (successo) {
+            doc.inviato = true;
+            localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+            alert("✅ Invio riuscito!");
+            renderListaModifica();
+        } else {
+            alert("❌ Errore: il server non risponde. Controlla la connessione.");
+        }
+    }
+
     function renderListaModifica() {
         const container = document.getElementById('lista-ddt-attesa');
+        const btnTutti = document.getElementById('btn-invia-tutti');
+        const countSpan = document.getElementById('count-sospesi');
         if (!container) return;
 
+        // Conta quanti documenti sono sospesi
+        const sospesi = ddtSalvati.filter(d => d.stampato && !d.inviato && d.tipo === 'DDT');    
+        
+        if (btnTutti) {
+            if (sospesi.length > 0) {
+                btnTutti.style.display = "block";
+                countSpan.innerText = sospesi.length;
+            } else {
+                btnTutti.style.display = "none";
+            }
+        }
         // Invertiamo l'ordine: gli ultimi inseriti appariranno per primi
         const documentiOrdinati = ddtSalvati.slice().reverse();
 
         container.innerHTML = documentiOrdinati.map(d => {
+            const dataFmt = d.data.split('-').reverse().join('/');
             const tot = d.tipo === 'DDT' ? d.items.reduce((acc, i) => acc + (i.qta * i.prezzo), 0).toFixed(2) : null;
             
             // Stile condizionale: grigio se stampato, verde se modificabile
@@ -597,10 +632,29 @@
 
             const displayID = d.numeroProgressivo || `<span style="color:orange">PROVVISORIO</span>`;
 
+            // --- LOGICA STATO INVIO ---
+            let badgeInvio = "";
+            let bottoneInvioManuale = "";
+
+            if (d.tipo === 'DDT' && d.stampato) {
+                if (d.inviato) {
+                    badgeInvio = `<span style="color: #28a745; font-size: 0.85em; font-weight: bold;">● INVIATO</span>`;
+                } else {
+                    badgeInvio = `<span style="color: #dc3545; font-size: 0.85em; font-weight: bold;">● NON INVIATO</span>`;
+                    // Pulsante di invio manuale (Blu)
+                    bottoneInvioManuale = `
+                        <button onclick="forzaInvio('${d.id}')" 
+                                style="width: 100%; margin-top: 10px; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span>📤</span> INVIA AL SERVER
+                        </button>`;
+                }
+            }
+
             return `
                 <div class="list-item" style="border-left:8px solid ${borderCol}; margin-bottom:10px; opacity: ${opacity}">
                     <div style="display:flex; justify-content:space-between">
                         <strong>${displayID}</strong> 
+                        <span style="margin-left:10px; font-size: 0.9em; color: #444;">📅 ${dataFmt}</span>
                         <span>${d.tipo} ${d.stampato ? '✅ STAMPATO' : '📝 BOZZA'}</span>
                     </div>
                     <div>Cod. ${d.clienteId} - <strong>${d.clienteNome}</strong></div>
@@ -616,6 +670,7 @@
                         ${d.stampato ? 'RISTAMPA' : 'STAMPA'}
                     </button>
                 </div>
+            ${bottoneInvioManuale}
             </div>`;
         }).join('');
     }
@@ -663,7 +718,6 @@
         if(localStorage.getItem('ultima_targa')) s.value = localStorage.getItem('ultima_targa');
     }
     async function stampaEInvia(id) {
-        //inviaDatiAlServer(); //da vedere quando inviare
 
         // Cerchiamo il documento nell'array
         const doc = ddtSalvati.find(d => d.id === id);
@@ -682,6 +736,28 @@
         // Segniamo il documento come stampato
         doc.stampato = true;
 
+        // TENTATIVO DI INVIO: Solo se è un DDT
+        if (doc.tipo === 'DDT') {
+            const esito = await inviaSingoloDocumento(doc);
+            if (esito) {
+                doc.inviato = true;
+            } else {
+                doc.inviato = false;
+            }
+        } else {
+            // Se è un CARICO, lo segniamo come "non applicabile" o non inviato per coerenza
+            doc.inviato = false; 
+        }
+
+        if (esito) {
+            doc.inviato = true;
+            // Messaggio verde temporaneo o notifica
+            mostraNotificaInviato(); 
+        } else {
+            doc.inviato = false;
+            alert("⚠️ Documento stampato ma NON inviato al server. Potrai riprovare dalla lista.");
+        }
+        
         // Salviamo lo stato aggiornato
         localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
         
@@ -707,92 +783,110 @@
         return parseFloat(num).toFixed(decimali).replace('.', ',');
     }
 
-    function preparaFilesPerServer() {
-        let csvTestata = "";
-        let csvArticoli = "";
+    async function inviaTuttiISospesi() {
+        // Filtriamo i documenti stampati ma NON inviati
+        const sospesi = ddtSalvati.filter(d => d.stampato && !d.inviato && d.tipo === 'DDT');        
+        
+        if (sospesi.length === 0) return;
 
-        // Filtriamo solo i DDT (escludiamo i Carichi)
-        const soloDDT = ddtSalvati.filter(d => d.tipo === 'DDT');
+        const btn = document.getElementById('btn-invia-tutti');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.style.backgroundColor = "#6c757d";
+        btn.innerText = "Sincronizzazione in corso...";
 
-        if (soloDDT.length === 0) {
-            alert("Nessun DDT presente da inviare.");
+        let inviatiConSuccesso = 0;
+
+        for (const doc of sospesi) {
+            const successo = await inviaSingoloDocumento(doc);
+            if (successo) {
+                doc.inviato = true;
+                inviatiConSuccesso++;
+            }
+            // Aggiorniamo il localStorage dopo ogni singolo invio per sicurezza
+            localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
+        }
+
+        // Feedback finale
+        alert(`Sincronizzazione completata: ${inviatiConSuccesso} documenti inviati.`);
+        
+        // Ripristiniamo l'interfaccia
+        btn.disabled = false;
+        btn.style.backgroundColor = "#28a745";
+        btn.innerHTML = originalText;
+        
+        renderListaModifica(); // Ricarica la lista per aggiornare i badge
+    }
+
+    function preparaCSVPerDocumentoSingolo(doc) {
+        if (!doc || !doc.numeroProgressivo) {
+            console.error("Documento non valido o non ancora numerato.");
             return null;
         }
 
-        soloDDT.forEach(doc => {
-            // --- LOGICA TESTATA ---
-            // Struttura: T|OC|serie|numero|codiceCliente|codiceCliente|data|ora
+        // --- LOGICA DI DIVISIONE ID (Serie e Numero) ---
+        // Gestisce formati come "MA/00001" o "MA/00001/MAGAZZINO"
+        const partiID = doc.numeroProgressivo.split('/');
+        const serie = partiID[0];      // Es: "MA"
+        const numeroDoc = partiID[1];   // Es: "00001"
+        
+        const dataFmt = formatDataCSV(doc.data);
+        const oraFmt = formatOraCSV();
+        const codiceCli = doc.clienteId; 
+
+        // --- GENERAZIONE TESTATINA ---
+        // Tracciato: T | OC | SERIE | NUMERO | DEST1 | DEST2 | DATA | ORA
+        const csvTestatina = `T|OC|${serie}|${numeroDoc}|${codiceCli}|${codiceCli}|${dataFmt}|${oraFmt}\n`;
+
+        // --- GENERAZIONE ARTICOLI ---
+        // Tracciato: R | OC | DATA | SERIE | NUMERO | CODART | QTA | PREZZO | 0 | UM |
+        let csvArticoli = "";
+        doc.items.forEach(item => {
+            const infoArt = anagraficaArticoli.find(a => a.id === item.id);
+            const um = infoArt ? infoArt.um : 'KG';
+
+            const riga = [
+                "R",
+                "OC",
+                dataFmt,
+                serie,      // 4° campo
+                numeroDoc,  // 5° campo
+                item.id,
+                formatNumCSV(item.qta, 5),
+                formatNumCSV(item.prezzo, 5),
+                "0,00",     // Penultimo campo fisso
+                um          // Ultimo campo prima del pipe finale
+            ];
             
-            const serie = "1";
-            // Estraiamo il numero documento dall'ID (l'ultima parte dopo l'ultimo trattino)
-            const numeroDoc = doc.id.split('-').pop(); 
-            const dataFmt = formatDataCSV(doc.data);
-            const oraFmt = formatOraCSV();
-            
-            // MODIFICA: Usiamo il codice cliente (es. 877) invece del nome
-            const codiceCli = doc.clienteId; 
-
-            // T | OC | serie | numero | destinatario1 | destinatario2 | data | ora
-            csvTestata += `T|OC|${serie}|${numeroDoc}|${codiceCli}|${codiceCli}|${dataFmt}|${oraFmt}\n`;
-
-            // --- LOGICA ARTICOLI ---
-            // Struttura: R|OC|data|serie|numero|codArt|qta|prezzo|0|0|UM|0
-            doc.items.forEach(item => {
-                // Cerchiamo l'UM nell'anagrafica caricata per quell'articolo
-                const infoArt = anagraficaArticoli.find(a => a.id === item.id);
-                const um = infoArt ? infoArt.um : 'KG';
-
-                const riga = [
-                    "R",
-                    "OC",
-                    dataFmt,
-                    serie,
-                    numeroDoc,
-                    item.id,
-                    formatNumCSV(item.qta, 5),
-                    formatNumCSV(item.prezzo, 5),
-                    um,
-                ];
-                csvArticoli += riga.join('|') + "|\n";
-            });
+            csvArticoli += riga.join('|') + "|\n";
         });
 
         return {
-            testata: csvTestata,
+            testatina: csvTestatina,
             articoli: csvArticoli
         };
     }
 
-    async function inviaDatiAlServer() {
-        const files = preparaFilesPerServer();
-        if (!files) return;
-
-        // Messaggio di conferma con anteprima (Debug)
-        console.log("File Testata:\n", files.testata);
-        console.log("File Articoli:\n", files.articoli);
+    async function inviaSingoloDocumento(doc) {
+        // Usiamo la logica di preparazione file adattata al singolo documento
+        const csvData = preparaCSVPerDocumentoSingolo(doc);
+        if (!csvData) return false;
 
         const formData = new FormData();
-        formData.append('testata', new Blob([files.testata], { type: 'text/csv' }), 'testata.csv');
-        formData.append('articoli', new Blob([files.articoli], { type: 'text/csv' }), 'articoli.csv');
+        formData.append('testatina', new Blob([csvData.testatina], { type: 'text/csv' }), 'testatina.csv');
+        formData.append('articoli', new Blob([csvData.articoli], { type: 'text/csv' }), 'articoli.csv');
 
-        debugger;
-
+        console.log("Invio documento:", csvData);
         try {
-            // Sostituiremo 'upload.php' con il tuo vero endpoint
             const response = await fetch('upload.php', {
                 method: 'POST',
                 body: formData
             });
-
-            if (response.ok) {
-                alert("✅ File inviati con successo al server!");
-                // Qui potresti voler segnare i documenti come 'Inviati'
-            } else {
-                throw new Error("Errore durante l'invio");
-            }
+            return response.ok;
         } catch (error) {
-            alert("❌ Errore di connessione: i file non sono stati inviati.");
-            console.error(error);
+            console.error("Errore invio:", error);
+            return false;
         }
     }
 
