@@ -741,23 +741,16 @@
             const esito = await inviaSingoloDocumento(doc);
             if (esito) {
                 doc.inviato = true;
+                mostraNotificaInviato(); 
             } else {
                 doc.inviato = false;
+                alert("⚠️ Documento stampato ma NON inviato al server. Potrai riprovare dalla lista.");
             }
         } else {
             // Se è un CARICO, lo segniamo come "non applicabile" o non inviato per coerenza
             doc.inviato = false; 
         }
-
-        if (esito) {
-            doc.inviato = true;
-            // Messaggio verde temporaneo o notifica
-            mostraNotificaInviato(); 
-        } else {
-            doc.inviato = false;
-            alert("⚠️ Documento stampato ma NON inviato al server. Potrai riprovare dalla lista.");
-        }
-        
+             
         // Salviamo lo stato aggiornato
         localStorage.setItem('ddt_local', JSON.stringify(ddtSalvati));
         
