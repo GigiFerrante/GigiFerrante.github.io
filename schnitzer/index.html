@@ -250,6 +250,7 @@
                 return { id: c[0].trim(), 
                          um: c[1].trim(), 
                          nome: c[3].trim(), 
+                         iso: c[5]?.trim() || '',   // <--- COLONNA 6 (Indice 5): Codice ISO
                          prezzo1: c[6] ? c[6].replace(',', '.') : "",
                          prezzo2: c[7] ? c[7].replace(',', '.') : "",
                          prezzo3: c[8] ? c[8].replace(',', '.') : ""
@@ -328,7 +329,11 @@
                              zona: c[2].trim(), 
                              rg2: c[4]?.trim() || "" , 
                              localita: c[6]?.trim() || "" ,
-                             listino: c[11]?.trim() || ""};
+                             listino: c[11]?.trim() || "",
+                             indirizzo: c[5]?.trim() || '',
+                             citta: c[6]?.trim() || '',
+                             prov: c[7]?.trim() || '',
+                             cap: c[8]?.trim() || ''};
                 });
                 anagraficheClienti = anagraficheClienti.concat(nuovi);
             } catch (e) { console.error(`Errore zona ${zona}`, e); }
@@ -496,7 +501,7 @@
             inputNascosto.value = doc.clienteId;
             const clienteAnag = anagraficheClienti.find(c => c.id === doc.clienteId);
             inputNascosto.dataset.listino = clienteAnag ? clienteAnag.listino : "";
-            if (btnReset) btnReset.style.display = 'none';
+            if (btnReset) btnReset.style.display = 'block';
         } else {
             // Se è un carico, svuotiamo i campi cliente (non servono)
             inputVisuale.value = "MAGAZZINO";
@@ -527,7 +532,7 @@
 
                 // Se il documento salvato ha un prezzo ma l'anagrafica dice che c'è un listino,
                 // il campo diventerà readonly con il prezzo salvato.
-                container.insertAdjacentHTML('beforeend', creaRigaArticolo(artAnag, item.qta, item.prezzo, prezzoDiListino));
+                container.insertAdjacentHTML('beforeend', creaRigaArticolo(artAnag, item.qta, item.colli, prezzoDiListino));
             }
         });
     }
@@ -837,6 +842,28 @@
         // Simulazione invio stampa
         alert(`Documento ${doc.numeroProgressivo} inviato alla stampa!\nDa questo momento non sarà più modificabile.`);
 
+        // Scegliamo il template in base al tipo di documento
+        const htmlContenuto = (doc.tipo === 'CARICO') 
+        ? generaHTMLStampaCarico(doc) 
+        : generaHTMLStampaDDT(doc);
+
+        // Apriamo una nuova finestra
+        const win = window.open('', '_blank');
+        
+        // Scriviamo il contenuto in modo pulito
+        win.document.write('<html><head><title>Stampa Documento</title></head>');
+        win.document.write(htmlContenuto);
+        win.document.write('</html>');
+        
+        win.document.close();
+
+        // Diamo il tempo al browser di caricare l'immagine del logo prima di stampare
+        setTimeout(() => {
+            win.focus();
+            win.print();
+            // win.close(); // Opzionale: decommenta se vuoi che la scheda si chiuda da sola
+        }, 500);
+        
         // Segniamo il documento come stampato
         doc.stampato = true;
 
@@ -965,6 +992,204 @@
         };
     }
 
+    function generaHTMLStampaCarico(doc) {
+        const dataFmt = doc.data.split('-').reverse().join('/');
+        
+        let righeArticoli = doc.items.map(item => {
+            const artAnag = anagraficaArticoli.find(a => a.id === item.id) || {};
+            return `
+                <tr>
+                    <td style="text-align: left;">${item.id}<br><small>${item.nome}</small></td>
+                    <td style="text-align: right;">${artAnag.iso || '-'}</td>
+                    <td style="text-align: right;">${artAnag.um || 'PZ'}</td>
+                    <td style="font-weight: bold; text-align: right;">${item.qta.toFixed(2)}</td>
+                    <td style="text-align: right;">${item.colli || '1'}</td>
+                </tr>
+            `;
+        }).join('');
+
+        // Restituiamo solo il contenuto necessario, lo stile lo iniettiamo nel contenitore
+        return `
+            <style>
+                .print-container { font-family: Arial, sans-serif; font-size: 12px; color: #333; padding: 20px; }
+                .header-print { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .logo-print { width: 120px; height: auto; }
+                .info-doc { text-align: right; line-height: 1.4; }
+                
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { background-color: #f2f2f2; border-bottom: 2px solid #333; padding: 8px; text-align: center; text-transform: uppercase; font-size: 11px; }
+                td { padding: 8px; border-bottom: 1px solid #ddd; text-align: center; }
+                
+                .titolo-doc { text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0; text-transform: uppercase; }
+                .footer-print { margin-top: 50px; display: flex; justify-content: space-between; }
+                .firma { border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 5px; font-size: 10px; margin-top: 40px;}
+                
+                @media print {
+                    .no-print { display: none; }
+                    body { margin: 0; }
+                }
+            </style>
+            <div class="print-container">
+                <div class="header-print">
+                    <img src="logo.jpg" class="logo-print" alt="LOGO">
+                    <div class="info-doc">
+                        <strong style="font-size: 16px;">DOCUMENTO DI CARICO</strong><br>
+                        Numero: <b>${doc.id}</b><br>
+                        Data: <b>${dataFmt}</b><br>
+                        Agente/Targa: <b>${doc.targa || 'N.D.'}</b>
+                    </div>
+                </div>
+
+                <div class="titolo-doc">Carico Magazzino</div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; width: 40%;">Descrizione</th>
+                            <th style="text-align: right;">ISO</th>
+                            <th style="text-align: right;">UM</th>
+                            <th style="text-align: right;">Quantità</th>
+                            <th style="text-align: right;">Colli</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${righeArticoli}
+                    </tbody>
+                </table>
+
+                <div class="footer-print">
+                    <div class="firma">Firma Operatore</div>
+                    <div class="firma">Responsabile Magazzino</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function generaHTMLStampaDDT(doc) {
+        const dataFmt = doc.data.split('-').reverse().join('/');
+        
+        // Recuperiamo i dati completi del cliente dall'anagrafica per l'intestazione
+        const cliente = anagraficheClienti.find(c => c.id === doc.clienteId) || {};
+
+        const rigaIndirizzo = cliente.indirizzo || "";
+        const rigaLocalita = `${cliente.cap} ${cliente.citta} (${cliente.prov})`;        
+    
+        let totaleDocumento = 0;
+        let haPrezzi = false;
+
+        // Generazione righe articoli
+        let righeArticoli = doc.items.map(item => {
+            const artAnag = anagraficaArticoli.find(a => a.id === item.id) || {};
+            const prezzo = parseFloat(item.prezzo) || 0;
+            const subtotale = (parseFloat(item.qta) * prezzo);
+            
+            if (prezzo > 0) {
+                haPrezzi = true;
+                totaleDocumento += subtotale;
+            }
+
+            return `
+                <tr>
+                    <td style="text-align: left;"><strong>${item.id}</strong><br><small>${item.nome}</small></td>
+                    <td>${artAnag.iso || '-'}</td>
+                    <td>${artAnag.um || 'PZ'}</td>
+                    <td style="font-weight: bold;text-align: right;">${item.qta}</td>
+                    <td style="text-align: right;">${prezzo > 0 ? '€ ' + prezzo.toFixed(2) : '-'}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const bloccoTotale = (haPrezzi && totaleDocumento > 0) 
+            ? `<div style="text-align: right; margin-top: 10px; font-size: 16px;">
+                <strong>TOTALE DOCUMENTO / GESAMTBETRAG: € ${totaleDocumento.toFixed(2)}</strong>
+            </div>` 
+            : '';
+
+        return `
+            <style>
+                .print-container { font-family: Arial, sans-serif; font-size: 11px; color: #333; padding: 15px; }
+                .header-print { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .logo-print { width: 120px; }
+                .info-doc { text-align: right; line-height: 1.3; }
+                
+                .sezione-cliente { margin: 15px 0; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; }
+                
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th { background-color: #eee; border-bottom: 2px solid #333; padding: 6px; text-transform: uppercase; font-size: 10px; }
+                td { padding: 8px 5px; border-bottom: 1px solid #ddd; text-align: center; }
+                
+                .footer-legale { margin-top: 30px; font-size: 9px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 10px; }
+                .firme-wrap { display: flex; justify-content: space-between; margin-top: 40px; }
+                .firma-box { width: 45%; border-top: 1px solid #333; text-align: center; padding-top: 5px; }
+                .lingua-de { font-style: italic; color: #666; display: block; font-size: 8px; }
+            </style>
+
+            <div class="print-container">
+                <div class="header-print">
+                    <img src="logo.jpg" class="logo-print" alt="LOGO">
+                    <div class="info-doc">
+                        <strong style="font-size: 14px;">NOTA DI CONSEGNA / LIEFERYSCHEIN</strong><br>
+                        Numero: <b>${doc.id}</b><br>
+                        Data: <b>${dataFmt}</b><br>
+                        Agente/Targa: <b>${doc.targa || 'N.D.'}</b>
+                    </div>
+                </div>
+
+                <div class="sezione-cliente">
+                    <span style="font-size: 10px; text-transform: uppercase;">Spett.le / An:</span><br>
+                    <div style="font-size: 13px; margin-top: 5px; line-height: 1.4;">
+                        <strong>${doc.clienteId} - ${doc.clienteNome}</strong><br>
+                        ${rigaIndirizzo}<br>
+                        ${rigaLocalita}
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; width: 45%;">Descrizione / Beschreibung</th>
+                            <th>ISO</th>
+                            <th>UM</th>
+                            <th style="text-align: right;">Q.tà</th>
+                            <th style="text-align: right;">Prz. / Preis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${righeArticoli}
+                    </tbody>
+                </table>
+
+                ${bloccoTotale}
+
+                <div class="firme-wrap">
+                    <div class="firma-box">
+                        <strong>FIRMA CONDUCENTE</strong>
+                        <span class="lingua-de">UNTERSCHRIFT DES FAHRERS</span>
+                    </div>
+                    <div class="firma-box">
+                        <strong>FIRMA DESTINATARIO</strong>
+                        <span class="lingua-de">UNTERSCHRIFT DES EMPFÄNGERS</span>
+                    </div>
+                </div>
+
+                <div class="footer-legale">
+                    <p style="text-align: center; font-weight: bold; margin-bottom: 5px;">
+                        DOVE NON SPECIFICATO LA MERCE SI INTENDE DI PRIMA CATEGORIA
+                    </p>
+                    <hr>
+                    <p style="text-align: center; margin: 5px 0;">
+                        TRASPORTO A CURA DEL MITTENTE / TRANSPORT DURCH ABSENDER<br>
+                        NOTA DI CONSEGNA PER TENTATA VENDITA (D.P.R. 472/98)
+                    </p>
+                    <hr>
+                    <p>
+                        Assolve gli obblighi di cui all'art.62, comma 1, del decreto Legge 24 gennaio 2002 n.1, convertito con modificazioni dalla legge 24 marzo 2012 n.27.<br>
+                        <strong>MERCE DEPERIBILE</strong> - Pagamento: entro ultimo giorno del mese ricevimento fattura + 30gg.
+                    </p>
+                </div>
+            </div>
+        `;
+    }
     async function inviaSingoloDocumento(doc) {
         // Usiamo la logica di preparazione file adattata al singolo documento
         const csvData = preparaCSVPerDocumentoSingolo(doc);
