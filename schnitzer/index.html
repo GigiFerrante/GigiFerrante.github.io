@@ -239,6 +239,20 @@
             }
         });
     });
+
+    function ottieniPrezzoPerCliente(infoArt) {
+        const idCli = document.getElementById('selected-cliente-id').value;
+        const cliente = anagraficaClienti.find(c => c.id === idCli);
+        const listino = cliente ? cliente.listino : "";
+
+        // Logica di selezione basata sul listino (01, 02, 03)
+        let prezzoScelto = "";
+        if (listino === '01') prezzoScelto = infoArt.prezzo1;
+        else if (listino === '02') prezzoScelto = infoArt.prezzo2;
+        else if (listino === '03') prezzoScelto = infoArt.prezzo3;
+
+        return prezzoScelto;
+    }
     
     async function caricaDatiBase() {
         try {
@@ -247,7 +261,13 @@
             const textArt = await resArt.text();
             anagraficaArticoli = textArt.split('\n').slice(2).filter(r => r.includes('|')).map(row => {
                 const c = row.split('|'); 
-                return { id: c[0].trim(), um: c[1].trim(), nome: c[3].trim(), prezzoBase: parseFloat(c[6]) || 0 };
+                return { id: c[0].trim(), 
+                         um: c[1].trim(), 
+                         nome: c[3].trim(), 
+                         prezzo1: c[6] ? c[6].replace(',', '.') : "",
+                         prezzo2: c[7] ? c[7].replace(',', '.') : "",
+                         prezzo3: c[8] ? c[8].replace(',', '.') : ""
+                    };
             });
             // Caricamento Targhe
             const resTar = await fetch('targhe.csv');
@@ -261,7 +281,7 @@
                     return { 
                         user: c[0].trim().toUpperCase(), 
                         pass: c[1].trim(), 
-                        nome: c[2]?.trim() || c[0].trim() 
+                        nome: c[2]?.trim() || c[0].trim(),
                     };
                 });
             }
@@ -317,7 +337,12 @@
                 const text = await res.text();
                 const nuovi = text.split('\n').slice(1).filter(r => r.includes('|')).map(row => {
                     const c = row.split('|');
-                    return { id: c[0].trim(), nome: c[3].trim(), zona: c[2].trim(), rg2: c[4]?.trim() || "" , localita: c[6]?.trim() || "" };
+                    return { id: c[0].trim(), 
+                             nome: c[3].trim(), 
+                             zona: c[2].trim(), 
+                             rg2: c[4]?.trim() || "" , 
+                             localita: c[6]?.trim() || "" ,
+                             listino: c[11]?.trim() || ""};
                 });
                 anagraficheClienti = anagraficheClienti.concat(nuovi);
             } catch (e) { console.error(`Errore zona ${zona}`, e); }
@@ -375,6 +400,16 @@
             ).slice(0, 5); // Limitiamo a 5 risultati per performance
 
             nuoviMatch.forEach(art => {
+                const listinoAttuale = document.getElementById('selected-cliente-id').dataset.listino || "";
+                let prezzoIniziale = 0; // Default nullo se non c'è listino
+
+                if (listinoAttuale === '01') prezzoIniziale = art.prezzo1;
+                else if (listinoAttuale === '02') prezzoIniziale = art.prezzo2;
+                else if (listinoAttuale === '03') prezzoIniziale = art.prezzo3;
+
+                const nuovaRiga = creaRigaArticolo(art, 0, 0, prezzoIniziale);
+                container.insertAdjacentHTML('beforeend', nuovaRiga);
+                
                 // Controlliamo che non sia già stato aggiunto (per evitare duplicati)
                 if (!document.querySelector(`#articoli-list .list-item[data-id="${art.id}"]`)) {
                     const nuovaRiga = creaRigaArticolo(art, 0, 0, art.prezzoBase || 0);
@@ -460,16 +495,21 @@
         // Caricamento dati cliente (solo se DDT)
         const inputVisuale = document.getElementById('cliente-search');
         const inputNascosto = document.getElementById('selected-cliente-id');
-        
+        const btnReset = document.getElementById('btn-reset-cliente');
+
         if (doc.tipo === 'DDT') {
             inputVisuale.value = `${doc.clienteId} - ${doc.clienteNome}`;
             inputVisuale.disabled = true; // Impedisce di cambiare cliente su un DDT esistente
             inputNascosto.value = doc.clienteId;
+            const clienteAnag = anagraficheClienti.find(c => c.id === doc.clienteId);
+            inputNascosto.dataset.listino = clienteAnag ? clienteAnag.listino : "";
+            if (btnReset) btnReset.style.display = 'block';
         } else {
             // Se è un carico, svuotiamo i campi cliente (non servono)
             inputVisuale.value = "MAGAZZINO";
             inputVisuale.disabled = true;
             inputNascosto.value = "MAGAZZINO";
+            if (btnReset) btnReset.style.display = 'none';
         }
 
         // Carica gli articoli nel modulo
@@ -621,8 +661,16 @@
 
         container.innerHTML = documentiOrdinati.map(d => {
             const dataFmt = d.data.split('-').reverse().join('/');
-            const tot = d.tipo === 'DDT' ? d.items.reduce((acc, i) => acc + (i.qta * i.prezzo), 0).toFixed(2) : null;
+
+            // Calcoliamo il totale solo se TUTTI gli articoli hanno un prezzo > 0
+            const haPrezzi = d.items.every(i => i.prezzo > 0);
+            const sommaTotale = d.items.reduce((acc, i) => acc + (i.qta * i.prezzo), 0);
             
+            // Prepariamo la stringa del totale: se non ha prezzi, la stringa rimane vuota
+            const stringaTotale = (haPrezzi && sommaTotale > 0) 
+                ? `| <strong>Tot: € ${sommaTotale.toFixed(2)}</strong>` 
+                : '';
+                
             // Stile condizionale: grigio se stampato, verde se modificabile
             const borderCol = d.stampato ? '#6c757d' : 'var(--primary-green)';
             const opacity = d.stampato ? '0.7' : '1';
@@ -658,7 +706,7 @@
                         <span>${d.tipo} ${d.stampato ? '✅ STAMPATO' : '📝 BOZZA'}</span>
                     </div>
                     <div>Cod. ${d.clienteId} - <strong>${d.clienteNome}</strong></div>
-                    <div style="font-size:12px">Articoli: ${d.items.length} ${tot ? `| <strong>Tot: € ${tot}</strong>` : ''}</div>
+                    <div style="font-size:12px">Articoli: ${d.items.length} ${stringaTotale ? `| <strong>Tot: € ${sommaTotale}</strong>` : ''}</div>
                     
                     <div style="display:flex; gap:10px; margin-top:10px">
                     ${puoModificare ? `
@@ -691,12 +739,45 @@
     function selezionaCliente(id, nome, zona) {
         const v = document.getElementById('cliente-search');
         const n = document.getElementById('selected-cliente-id');
+        const cliente = anagraficheClienti.find(c => c.id === id); // Trova oggetto completo
+        const listino = (cliente && cliente.listino && cliente.listino.trim() !== "") ? cliente.listino : null;
+
         v.value = `${id} - ${nome}`; v.disabled = true;
-        n.value = id; n.dataset.zona = zona;
+        n.value = id; 
+        n.dataset.zona = zona;
+        n.dataset.listino = listino || ""; // Salva il listino o null nel dataset
         document.getElementById('clienti-suggeriti').style.display = 'none';
         document.getElementById('btn-reset-cliente').style.display = 'block';
+        aggiornaPrezziListino(cliente.listino);
     }
 
+    function aggiornaPrezziListino(codiceListino) {
+        // Seleziona tutte le righe articoli nel DOM
+        const righe = document.querySelectorAll('#articoli-list .list-item');
+        
+        righe.forEach(riga => {
+            const artId = riga.dataset.id;
+            const infoArt = anagraficaArticoli.find(a => a.id === artId);
+            
+            if (infoArt) {
+                let prezzoScelto = 0;
+                console.log(`Aggiornamento prezzo per articolo ${artId} con listino ${codiceListino}`); // Debug
+                // Logica di selezione basata sul listino
+                if (codiceListino === '01') prezzoScelto = infoArt.prezzo1;
+                else if (codiceListino === '02') prezzoScelto = infoArt.prezzo2;
+                else if (codiceListino === '03') prezzoScelto = infoArt.prezzo3;
+
+                const inputPrezzo = riga.querySelector('.prz-in');
+                if (inputPrezzo) {
+                    inputPrezzo.value = parseFloat(prezzoScelto || 0).toFixed(2);
+                    inputPrezzo.disabled = !prezzoScelto;
+                    // Feedback visivo: evidenzia brevemente il cambio prezzo
+                    inputPrezzo.style.backgroundColor = "#e8f0fe";
+                    setTimeout(() => inputPrezzo.style.backgroundColor = "white", 500);
+                }
+            }
+        });
+    }
     function resetCliente() {
         const v = document.getElementById('cliente-search');
         v.value = ''; v.disabled = false;
@@ -716,6 +797,14 @@
         const s = document.getElementById('targa-select');
         s.innerHTML = targhe.map(t => `<option value="${t}">${t}</option>`).join('');
         if(localStorage.getItem('ultima_targa')) s.value = localStorage.getItem('ultima_targa');
+    }
+
+    function mostraNotificaInviato() {
+        const div = document.createElement('div');
+        div.innerText = "Documento sincronizzato con successo!";
+        div.style = "position:fixed; top:20px; right:20px; background:green; color:white; padding:15px; border-radius:8px; z-index:9999;";
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 3000);
     }
     async function stampaEInvia(id) {
 
