@@ -1012,18 +1012,18 @@
         return `
             <style>
                 body { font-size: xx-small;margin: 0; padding: 0px; }
-                .print-container { font-family: Arial, sans-serif; font-size: 12px; color: #333; padding: 0px; }
+                .print-container { font-family: Arial, sans-serif; font-size: xx-small; color: #333; padding: 0px; }
                 .header-print { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0px; border-bottom: 2px solid #333; padding-bottom: 0px; }
                 .logo-print { width: 120px; height: auto; }
                 .info-doc { text-align: right; line-height: 1.4; }
                 
-                table { width: 100%; border-collapse: collapse; margin-top: 0px; }
-                th { background-color: #f2f2f2; border-bottom: 2px solid #333; padding: 8px; text-align: center; text-transform: uppercase; font-size: 11px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 0px; font-size: xx-small;}
+                th { background-color: #f2f2f2; border-bottom: 2px solid #333; padding: 8px; text-align: center; text-transform: uppercase; font-size: xx-small; }
                 td { padding: 0px; border-bottom: 1px solid #ddd; text-align: center; }
                 
-                .titolo-doc { text-align: center; font-size: 18px; font-weight: bold; margin: 0px 0; text-transform: uppercase; }
+                .titolo-doc { text-align: center; font-size: xx-small; font-weight: bold; margin: 0px 0; text-transform: uppercase; }
                 .footer-print { margin-top: 50px; display: flex; justify-content: space-between; }
-                .firma { border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 5px; font-size: 10px; margin-top: 40px;}
+                .firma { border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 5px; font-size: xx-small; margin-top: 40px;}
                 
                 @media print {
                     .no-print { display: none; }
@@ -1034,7 +1034,7 @@
                 <div class="header-print">
                     <img src="logo.jpg" class="logo-print" alt="LOGO">
                     <div class="info-doc">
-                        <strong style="font-size: 16px;">DOCUMENTO DI CARICO</strong><br>
+                        <strong style="font-size: xx-small;">DOCUMENTO DI CARICO</strong><br>
                         Numero: <b>${doc.id}</b><br>
                         Data: <b>${dataFmt}</b><br>
                         Agente/Targa: <b>${doc.targa || 'N.D.'}</b>
@@ -1053,7 +1053,7 @@
                             <th style="text-align: right;">Colli</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody style="font-size: xx-small;">
                         ${righeArticoli}
                     </tbody>
                 </table>
@@ -1101,7 +1101,7 @@
         }).join('');
 
         const bloccoTotale = (haPrezzi && totaleDocumento > 0) 
-            ? `<div style="text-align: right; margin-top: 10px; font-size: 16px;">
+            ? `<div style="text-align: right; margin-top: 10px; font-size: xx-small;">
                 <strong>TOTALE DOCUMENTO / GESAMTBETRAG: € ${totaleDocumento.toFixed(2)}</strong>
             </div>` 
             : '';
@@ -1109,7 +1109,7 @@
         return `
             <style>
                 body { font-size: xx-small;margin: 0; padding: 0px; }
-                .print-container { font-family: Arial, sans-serif; font-size: 11px; color: #333; padding: 0px; }
+                .print-container { font-family: Arial, sans-serif; font-size: xx-small; color: #333; padding: 0px; }
                 .header-print { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px; }
                 .logo-print { width: 120px; }
                 .info-doc { text-align: right; line-height: 1.3; }
@@ -1117,7 +1117,7 @@
                 .sezione-cliente { margin: 0px 0; padding: 0px; border: 1px solid #ccc; background: #f9f9f9; }
                 
                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th { background-color: #eee; border-bottom: 2px solid #333; padding: 6px; text-transform: uppercase; font-size: 10px; }
+                th { background-color: #eee; border-bottom: 2px solid #333; padding: 6px; text-transform: uppercase; font-size: xx-small; }
                 td { padding: 8px 5px; border-bottom: 1px solid #ddd; text-align: center; }
                 
                 .footer-legale { margin-top: 30px; font-size: 9px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 10px; }
@@ -1130,7 +1130,7 @@
                 <div class="header-print">
                     <img src="logo.jpg" class="logo-print" alt="LOGO">
                     <div class="info-doc">
-                        <strong style="font-size: 14px;">NOTA DI CONSEGNA / LIEFERYSCHEIN</strong><br>
+                        <strong style="font-size: xx-small;">NOTA DI CONSEGNA / LIEFERYSCHEIN</strong><br>
                         Numero: <b>${doc.id}</b><br>
                         Data: <b>${dataFmt}</b><br>
                         Agente/Targa: <b>${doc.targa || 'N.D.'}</b>
@@ -1138,8 +1138,8 @@
                 </div>
 
                 <div class="sezione-cliente">
-                    <span style="font-size: 10px; text-transform: uppercase;">Spett.le / An:</span><br>
-                    <div style="font-size: 13px; margin-top: 5px; line-height: 1.4;">
+                    <span style="font-size: xx-small; text-transform: uppercase;">Spett.le / An:</span><br>
+                    <div style="font-size: xx-small; margin-top: 5px; line-height: 1.4;">
                         <strong>${doc.clienteId} - ${doc.clienteNome}</strong><br>
                         ${rigaIndirizzo}<br>
                         ${rigaLocalita}
@@ -1149,14 +1149,14 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="text-align: left; width: 45%;">Descrizione / Beschreibung</th>
-                            <th>ISO</th>
-                            <th>UM</th>
+                            <th style="text-align: left; width: 45%;">Descrizione</th>
+                            <th style="text-align: right;">ISO</th>
+                            <th style="text-align: right;">UM</th>
                             <th style="text-align: right;">Q.tà</th>
                             <th style="text-align: right;">Prz. / Preis</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody style="font-size: xx-small;">
                         ${righeArticoli}
                     </tbody>
                 </table>
