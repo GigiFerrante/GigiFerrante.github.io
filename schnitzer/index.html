@@ -150,7 +150,7 @@
             <div class="top-half"><label>TARGA</label><select id="targa-select"></select></div>
         </div>
 
-        <div id="cliente-area" class="cliente-box hidden">
+        <div id="cliente-area" class="cliente-box">
             <label>CLIENTE (Cerca per nome o codice)</label>
             <div style="position: relative;">
                 <input type="text" id="cliente-search" placeholder="Inizia a scrivere il nome..." 
@@ -239,20 +239,6 @@
             }
         });
     });
-
-    function ottieniPrezzoPerCliente(infoArt) {
-        const idCli = document.getElementById('selected-cliente-id').value;
-        const cliente = anagraficaClienti.find(c => c.id === idCli);
-        const listino = cliente ? cliente.listino : "";
-
-        // Logica di selezione basata sul listino (01, 02, 03)
-        let prezzoScelto = "";
-        if (listino === '01') prezzoScelto = infoArt.prezzo1;
-        else if (listino === '02') prezzoScelto = infoArt.prezzo2;
-        else if (listino === '03') prezzoScelto = infoArt.prezzo3;
-
-        return prezzoScelto;
-    }
     
     async function caricaDatiBase() {
         try {
@@ -352,9 +338,16 @@
     // --- LOGICA CORE: RENDERING E FILTRI ---
     
     // Funzione UNICA per creare l'HTML di una riga articolo
-    function creaRigaArticolo(art, qtaVal = 0, colliVal = 0, przVal = 0) {
+    function creaRigaArticolo(art, qtaVal = 0, colliVal = 0, przDefault = "") {
+        const isReadOnly = przDefault !== "" ? "readonly" : "";
+
         const qFmt = parseFloat(qtaVal || 0).toFixed(3);
-        const pFmt = parseFloat(przVal || 0).toFixed(2);
+        const pFmt = parseFloat(przDefault || 0).toFixed(2);
+
+        const stileInput = przDefault !== "" 
+            ? "background-color: #e9ecef; color: #495057; border: 1px solid #ced4da;" 
+            : "border: 2px solid orange;"; // Arancione se deve essere inserito a mano
+
         return `
             <div class="list-item" data-id="${art.id}" data-nome="${art.nome}">
                 <div class="item-header"><strong>${art.id}</strong> ${art.nome}</div>
@@ -364,7 +357,7 @@
                         <div class="qty-container"><label>QUANTITÀ</label><input type="number" step="0.001" class="large-input qta-in" value="${qFmt}" onfocus="this.select()" oninput="pulisciErrore(this)"></div>
                     ` : `
                         <div class="qty-container"><label>QUANTITÀ</label><input type="number" step="0.001" class="large-input qta-in" value="${qFmt}" onfocus="this.select()" oninput="pulisciErrore(this)"></div>
-                        <div class="qty-container"><label>PREZZO €</label><input type="number" step="0.01" class="large-input prz-in" value="${pFmt}" onfocus="this.select()"></div>
+                        <div class="qty-container"><label>PREZZO €</label><input type="number" step="0.01" class="large-input prz-in" value="${pFmt}" ${isReadOnly} style="${stileInput}" onfocus="this.select()"></div>
                     `}
                 </div>
                 <span class="error-msg" style="color:red; font-size:11px; font-weight:bold; display:block; margin-top:5px; height:15px;"></span>
@@ -503,7 +496,7 @@
             inputNascosto.value = doc.clienteId;
             const clienteAnag = anagraficheClienti.find(c => c.id === doc.clienteId);
             inputNascosto.dataset.listino = clienteAnag ? clienteAnag.listino : "";
-            if (btnReset) btnReset.style.display = 'block';
+            if (btnReset) btnReset.style.display = 'none';
         } else {
             // Se è un carico, svuotiamo i campi cliente (non servono)
             inputVisuale.value = "MAGAZZINO";
@@ -514,6 +507,29 @@
 
         // Carica gli articoli nel modulo
         renderArticoli(doc.items, true);
+
+        // Recuperiamo il listino aggiornato dall'anagrafica
+        const clienteAnag = anagraficheClienti.find(c => c.id === doc.clienteId);
+        const codiceListino = clienteAnag ? clienteAnag.listino : null;
+
+        // Svuotiamo e rigeneriamo la lista articoli con la logica dei blocchi
+        const container = document.getElementById('articoli-list');
+        container.innerHTML = "";
+
+        doc.items.forEach(item => {
+            const artAnag = anagraficaArticoli.find(a => a.id === item.id);
+            if (artAnag) {
+                // Calcoliamo quale sarebbe il prezzo di listino ATTUALE
+                let prezzoDiListino = "";
+                if (codiceListino === '01') prezzoDiListino = artAnag.prezzo1;
+                else if (codiceListino === '02') prezzoDiListino = artAnag.prezzo2;
+                else if (codiceListino === '03') prezzoDiListino = artAnag.prezzo3;
+
+                // Se il documento salvato ha un prezzo ma l'anagrafica dice che c'è un listino,
+                // il campo diventerà readonly con il prezzo salvato.
+                container.insertAdjacentHTML('beforeend', creaRigaArticolo(artAnag, item.qta, item.prezzo, prezzoDiListino));
+            }
+        });
     }
 
     function salvaInLocale() {
@@ -761,7 +777,6 @@
             
             if (infoArt) {
                 let prezzoScelto = 0;
-                console.log(`Aggiornamento prezzo per articolo ${artId} con listino ${codiceListino}`); // Debug
                 // Logica di selezione basata sul listino
                 if (codiceListino === '01') prezzoScelto = infoArt.prezzo1;
                 else if (codiceListino === '02') prezzoScelto = infoArt.prezzo2;
