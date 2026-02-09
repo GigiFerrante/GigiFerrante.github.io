@@ -455,7 +455,7 @@
 
         if (contatoreVecchi > 0) {
             // AVVISO TEMPORANEO (da togliere in produzione)
-            alert(`⚠️ AVVISO DEBUG: Rilevati ${contatoreVecchi} documenti vecchi (più di 3 giorni). Saranno eliminati.`);
+            //alert(`⚠️ AVVISO DEBUG: Rilevati ${contatoreVecchi} documenti vecchi (più di 3 giorni). Saranno eliminati.`);
 
             // Aggiorniamo lo stato e il localStorage
             ddtSalvati = documentiFiltrati;
@@ -840,7 +840,7 @@
             doc.id = nuovoID; // Aggiorniamo l'id per non avere più il TEMP-
         }
         // Simulazione invio stampa
-        alert(`Documento ${doc.numeroProgressivo} inviato alla stampa!\nDa questo momento non sarà più modificabile.`);
+        //alert(`Documento ${doc.numeroProgressivo} inviato alla stampa!\nDa questo momento non sarà più modificabile.`);
 
         // Scegliamo il template in base al tipo di documento
         const htmlContenuto = (doc.tipo === 'CARICO') 
@@ -875,7 +875,7 @@
                 mostraNotificaInviato(); 
             } else {
                 doc.inviato = false;
-                alert("⚠️ Documento stampato ma NON inviato al server. Potrai riprovare dalla lista.");
+                //alert("⚠️ Documento stampato ma NON inviato al server. Potrai riprovare dalla lista.");
             }
         } else {
             // Se è un CARICO, lo segniamo come "non applicabile" o non inviato per coerenza
@@ -933,7 +933,7 @@
         }
 
         // Feedback finale
-        alert(`Sincronizzazione completata: ${inviatiConSuccesso} documenti inviati.`);
+        //alert(`Sincronizzazione completata: ${inviatiConSuccesso} documenti inviati.`);
         
         // Ripristiniamo l'interfaccia
         btn.disabled = false;
@@ -1018,7 +1018,7 @@
                 .info-doc { text-align: right; line-height: 1.4; }
                 
                 table { width: 100%; border-collapse: collapse; margin-top: 0px; font-size: xx-small;}
-                th { background-color: #f2f2f2; border-bottom: 2px solid #333; padding: 6px; text-align: center; text-transform: uppercase; font-size: xx-small; }
+                th { background-color: #f2f2f2; border-bottom: 2px solid #333; padding: 2px; text-align: center; text-transform: uppercase; font-size: xx-small; }
                 td { padding: 0px; border-bottom: 1px solid #ddd; text-align: center; }
                 
                 .titolo-doc { text-align: center; font-size: xx-small; font-weight: bold; margin: 0px 0; text-transform: uppercase; }
@@ -1117,8 +1117,8 @@
                 .sezione-cliente { margin: 0px 0; padding: 0px; border: 1px solid #ccc; background: #f9f9f9; }
                 
                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th { background-color: #eee; border-bottom: 2px solid #333; padding: 6px; text-transform: uppercase; font-size: xx-small; }
-                td { padding: 6px 5px; border-bottom: 1px solid #ddd; text-align: center; }
+                th { background-color: #eee; border-bottom: 2px solid #333; padding: 2px; text-transform: uppercase; font-size: xx-small; }
+                td { padding: 0px; border-bottom: 1px solid #ddd; text-align: center; }
                 
                 .footer-legale { margin-top: 30px; font-size: 9px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 10px; }
                 .firme-wrap { display: flex; justify-content: space-between; margin-top: 40px; }
