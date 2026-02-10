@@ -103,6 +103,46 @@
         .list-item {
             transition: background 0.3s ease;
         }
+        .suggerimento-item {
+            padding: 0px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            background-color: #fff;
+            transition: background-color 0.2s ease;
+            font-size: 14px;
+            color: #333;
+            display: block; /* Assicura che occupi tutta la larghezza */
+        }
+
+        /* Effetto al passaggio del mouse (desktop) */
+        .suggerimento-item:hover {
+            background-color: #f0f7ff;
+            color: var(--primary-blue);
+        }
+
+        /* Effetto al tocco (mobile) */
+        .suggerimento-item:active {
+            background-color: #e2eefd;
+        }
+
+        /* Rende l'ultimo elemento senza bordo inferiore */
+        .suggerimento-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Stile per il contenitore dei suggerimenti (se non l'hai già) */
+        .suggerimenti {
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 0 0 8px 8px;
+        }
     </style>
 </head>
 <body>
@@ -150,7 +190,7 @@
             <div class="top-half"><label>TARGA</label><select id="targa-select"></select></div>
         </div>
 
-        <div id="cliente-area" class="cliente-box">
+        <div id="cliente-area" class="cliente-box"style="margin-top: 10px; padding-left: 15px;">
             <label>CLIENTE (Cerca per nome o codice)</label>
             <div style="position: relative;">
                 <input type="text" id="cliente-search" placeholder="Inizia a scrivere il nome..." 
@@ -162,6 +202,14 @@
             <div id="clienti-suggeriti" style="max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 0 0 10px 10px; display: none;"></div>
             
             <input type="hidden" id="selected-cliente-id">
+        </div>
+        
+        <div class="login-field" id="fatturazione-wrap" style="margin-top: 10px; border-left: 3px solid var(--primary-blue); padding-left: 10px;">
+            <label>Fatturare a: (Lascia vuoto se uguale)</label>
+            <input type="text" id="fattura-search" placeholder="Cerca cliente fatturazione...">
+            <input type="hidden" id="selected-fattura-id">
+            <div id="fattura-suggeriti" style="max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 0 0 10px 10px; display: none;"></div>
+            <button id="btn-reset-fattura" class="btn-del hidden" onclick="resetFattura()" style="width: auto; padding: 5px 10px; font-size: 12px;">Usa stesso di sopra</button>
         </div>
 
         <div style="padding:10px;position: relative;">
@@ -474,6 +522,13 @@
             return;
         }
 
+        if (doc.fatturaId) {
+            const fattAnag = anagraficheClienti.find(c => c.id === doc.fatturaId);
+            if (fattAnag) selezionaFatturazione(fattAnag.id, fattAnag.nome);
+        } else {
+            resetFattura();
+        }
+
         // Impostiamo le variabili di stato per l'editor
         currentEditingId = doc.id;
         currentType = doc.tipo;
@@ -575,6 +630,7 @@
             targa: document.getElementById('targa-select').value,
             clienteId: idCli || 'MAGAZZINO',
             clienteNome: currentType === 'DDT' ? document.getElementById('cliente-search').value.split(' - ')[1] : 'CARICO',
+            fatturaId: document.getElementById('selected-fattura-id').value,
             zona: document.getElementById('selected-cliente-id').dataset.zona || '',
             items: items,
             stampato: false,
@@ -755,6 +811,43 @@
                 <strong>${a.id}</strong> - ${a.nome} <br><small>${a.rg2} - ${a.localita}</small>
             </div>`).join('');
         sug.style.display = matches.length ? 'block' : 'none';
+    }
+
+    // Gestione ricerca per il secondo cliente (Fatturazione)
+    document.getElementById('fattura-search').addEventListener('input', function() {
+        const term = this.value.toLowerCase();
+        const suggerimenti = document.getElementById('fattura-suggeriti');
+        suggerimenti.innerHTML = "";
+        if (term.length < 2) return;
+
+        const matches = anagraficheClienti.filter(c => 
+            c.id.toLowerCase().includes(term) || c.nome.toLowerCase().includes(term)
+        ).slice(0, 5);
+
+        matches.forEach(c => {
+            const d = document.createElement('p');
+            d.className = 'suggerimento-item';
+            //d.innerText = `${c.id} - ${c.nome} <br> ${c.rg2} - ${c.localita}`;
+            d.innerHTML = `<strong>${c.id}</strong> - ${c.nome} <br><small>${c.rg2} - ${c.localita}</small>`;
+            d.onclick = () => selezionaFatturazione(c.id, c.nome);
+            suggerimenti.appendChild(d);
+        });
+        suggerimenti.style.display = 'block';
+    });
+
+    function selezionaFatturazione(id, nome) {
+        document.getElementById('fattura-search').value = `${id} - ${nome}`;
+        document.getElementById('fattura-search').disabled = true;
+        document.getElementById('selected-fattura-id').value = id;
+        document.getElementById('fattura-suggeriti').style.display = 'none';
+        document.getElementById('btn-reset-fattura').classList.remove('hidden');
+    }
+
+    function resetFattura() {
+        document.getElementById('fattura-search').value = "";
+        document.getElementById('fattura-search').disabled = false;
+        document.getElementById('selected-fattura-id').value = "";
+        document.getElementById('btn-reset-fattura').classList.add('hidden');
     }
 
     function selezionaCliente(id, nome, zona) {
@@ -1047,8 +1140,8 @@
                     <thead>
                         <tr>
                             <th style="text-align: left; width: 40%;">Descrizione</th>
-                            <th style="text-align: right;">ISO</th>
-                            <th style="text-align: right;">UM</th>
+                            <th style="text-align: left;">ISO</th>
+                            <th style="text-align: left;">UM</th>
                             <th style="text-align: right;">Quantità</th>
                             <th style="text-align: right;">Colli</th>
                         </tr>
@@ -1105,6 +1198,37 @@
             </div>` 
             : '';
 
+            const cDest = anagraficheClienti.find(cli => cli.id === doc.clienteId) || {};
+            let bloccoClientiHTML = "";
+
+            // Se c'è un cliente fatturazione diverso
+            if (doc.fatturaId && doc.fatturaId !== doc.clienteId) {
+                const cFatt = anagraficheClienti.find(cli => cli.id === doc.fatturaId) || {};
+                bloccoClientiHTML = `
+                    <div style="display: flex; gap: 20px;">
+                        <div class="sezione-cliente" style="flex: 1;">
+                            <span style="font-size: 9px; text-transform: uppercase;">Fatturare a / Rechnung an:</span><br>
+                            <strong>${cFatt.nome}</strong><br>
+                            ${cFatt.indirizzo}<br>${cFatt.cap} ${cFatt.citta} (${cFatt.prov})
+                        </div>
+                        <div class="sezione-cliente" style="flex: 1; border-left: 2px solid #eee;">
+                            <span style="font-size: 9px; text-transform: uppercase;">Destinatario / Empfänger:</span><br>
+                            <strong>${cDest.nome}</strong><br>
+                            ${cDest.indirizzo}<br>${cDest.cap} ${cDest.citta} (${cDest.prov})
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Blocco standard unico
+                bloccoClientiHTML = `
+                    <div class="sezione-cliente">
+                        <span style="font-size: 9px; text-transform: uppercase;">Cliente e Destinatario / Kunde und Empfänger:</span><br>
+                        <strong>${cDest.nome}</strong><br>
+                        ${cDest.indirizzo}<br>${cDest.cap} ${cDest.citta} (${cDest.prov})
+                    </div>
+                `;
+            }
+
         return `
             <style>
                 body { font-size: xx-small;margin: 0; padding: 0px; }
@@ -1136,21 +1260,14 @@
                     </div>
                 </div>
 
-                <div class="sezione-cliente">
-                    <span style="font-size: xx-small; text-transform: uppercase;">Spett.le / An:</span><br>
-                    <div style="font-size: xx-small; margin-top: 5px; line-height: 1.4;">
-                        <strong>${doc.clienteNome}</strong><br>
-                        ${rigaIndirizzo}<br>
-                        ${rigaLocalita}
-                    </div>
-                </div>
+                ${bloccoClientiHTML}        
 
                 <table>
                     <thead>
                         <tr>
                             <th style="text-align: left; width: 45%;">Descrizione</th>
-                            <th style="text-align: right;">ISO</th>
-                            <th style="text-align: right;">UM</th>
+                            <th style="text-align: left;">ISO</th>
+                            <th style="text-align: left;">UM</th>
                             <th style="text-align: right;">Q.tà</th>
                             <th style="text-align: right;">Prz. / Preis</th>
                         </tr>
