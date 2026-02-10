@@ -1059,8 +1059,7 @@
                 </table>
 
                 <div class="footer-print">
-                    <div class="firma">Firma Operatore</div>
-                    <div class="firma">Responsabile Magazzino</div>
+                    <div class="firma">Firma Conducente</div>
                 </div>
             </div>
         `;
@@ -1130,7 +1129,7 @@
                 <div class="header-print">
                     <img src="logo.png" class="logo-print" alt="LOGO">
                     <div class="info-doc">
-                        <strong style="font-size: xx-small;">NOTA DI CONSEGNA / LIEFERYSCHEIN</strong><br>
+                        <strong style="font-size: xx-small;">NOTA DI CONSEGNA / LIEFERSCHEIN</strong><br>
                         Numero: <b>${doc.id}</b><br>
                         Data: <b>${dataFmt}</b><br>
                         Agente/Targa: <b>${doc.targa || 'N.D.'}</b>
@@ -1140,7 +1139,7 @@
                 <div class="sezione-cliente">
                     <span style="font-size: xx-small; text-transform: uppercase;">Spett.le / An:</span><br>
                     <div style="font-size: xx-small; margin-top: 5px; line-height: 1.4;">
-                        <strong>${doc.clienteId} - ${doc.clienteNome}</strong><br>
+                        <strong>${doc.clienteNome}</strong><br>
                         ${rigaIndirizzo}<br>
                         ${rigaLocalita}
                     </div>
