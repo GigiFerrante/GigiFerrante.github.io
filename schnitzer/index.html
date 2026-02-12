@@ -377,11 +377,12 @@
                              zona: c[2].trim(), 
                              rg2: c[4]?.trim() || "" , 
                              localita: c[6]?.trim() || "" ,
-                             listino: c[11]?.trim() || "",
                              indirizzo: c[5]?.trim() || '',
                              citta: c[6]?.trim() || '',
                              prov: c[7]?.trim() || '',
-                             cap: c[8]?.trim() || ''};
+                             cap: c[8]?.trim() || '',
+                             piva: c[9]?.trim() || '',
+                             listino: c[11]?.trim() || ""};
                 });
                 anagraficheClienti = anagraficheClienti.concat(nuovi);
             } catch (e) { console.error(`Errore zona ${zona}`, e); }
@@ -1163,9 +1164,6 @@
         
         // Recuperiamo i dati completi del cliente dall'anagrafica per l'intestazione
         const cliente = anagraficheClienti.find(c => c.id === doc.clienteId) || {};
-
-        const rigaIndirizzo = cliente.indirizzo || "";
-        const rigaLocalita = `${cliente.cap} ${cliente.citta} (${cliente.prov})`;        
     
         let totaleDocumento = 0;
         let haPrezzi = false;
@@ -1209,11 +1207,13 @@
                         <div class="sezione-cliente" style="flex: 1;">
                             <span style="font-size: 9px; text-transform: uppercase;">Fatturare a / Rechnung an:</span><br>
                             <strong>${cFatt.nome}</strong><br>
-                            ${cFatt.indirizzo}<br>${cFatt.cap} ${cFatt.citta} (${cFatt.prov})
+                            ${cFatt.rg2}<br>
+                            ${cFatt.indirizzo}<br>${cFatt.cap} ${cFatt.citta} (${cFatt.prov}) <br> ${cFatt.piva ? 'P.IVA: ' + cFatt.piva : ''}
                         </div>
                         <div class="sezione-cliente" style="flex: 1; border-left: 2px solid #eee;">
                             <span style="font-size: 9px; text-transform: uppercase;">Destinatario / Empfänger:</span><br>
                             <strong>${cDest.nome}</strong><br>
+                            ${cDest.rg2}<br>
                             ${cDest.indirizzo}<br>${cDest.cap} ${cDest.citta} (${cDest.prov})
                         </div>
                     </div>
@@ -1301,7 +1301,7 @@
                     </p>
                     <hr>
                     <p>
-                        Assolve gli obblighi di cui all'art.62, comma 1, del decreto Legge 24 gennaio 2002 n.1, convertito con modificazioni dalla legge 24 marzo 2012 n.27.<br>
+                        Assolve gli obblighi di cui all'art.62, comma 1, del decreto Legge 24 gennaio 2012 n.1, convertito con modificazioni dalla legge 24 marzo 2012 n.27.<br>
                         <strong>MERCE DEPERIBILE</strong> - Pagamento: entro ultimo giorno del mese ricevimento fattura + 30gg.
                     </p>
                 </div>
