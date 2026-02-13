@@ -205,11 +205,13 @@
         </div>
         
         <div class="login-field" id="fatturazione-wrap" style="margin-top: 10px; border-left: 3px solid var(--primary-blue); padding-left: 10px;">
-            <label>Fatturare a: (Lascia vuoto se uguale)</label>
-            <input type="text" id="fattura-search" placeholder="Cerca cliente fatturazione...">
+            <label>Fatturare a:</label>
+            <input type="text" id="fattura-search" placeholder="Cliente fatturazione..." disabled>
             <input type="hidden" id="selected-fattura-id">
             <div id="fattura-suggeriti" style="max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 0 0 10px 10px; display: none;"></div>
-            <button id="btn-reset-fattura" class="btn-del hidden" onclick="resetFattura()" style="width: auto; padding: 5px 10px; font-size: 12px;">Usa stesso di sopra</button>
+            <!--
+                <button id="btn-reset-fattura" class="btn-del hidden" onclick="resetFattura()" style="width: auto; padding: 5px 10px; font-size: 12px;">Usa stesso di sopra</button>
+            -->
         </div>
 
         <div style="padding:10px;position: relative;">
@@ -373,6 +375,7 @@
                 const nuovi = text.split('\n').slice(1).filter(r => r.includes('|')).map(row => {
                     const c = row.split('|');
                     return { id: c[0].trim(), 
+                             idFattura: c[1]?.trim(),
                              nome: c[3].trim(), 
                              zona: c[2].trim(), 
                              rg2: c[4]?.trim() || "" , 
@@ -841,14 +844,14 @@
         document.getElementById('fattura-search').disabled = true;
         document.getElementById('selected-fattura-id').value = id;
         document.getElementById('fattura-suggeriti').style.display = 'none';
-        document.getElementById('btn-reset-fattura').classList.remove('hidden');
+        //document.getElementById('btn-reset-fattura').classList.remove('hidden');
     }
 
     function resetFattura() {
         document.getElementById('fattura-search').value = "";
-        document.getElementById('fattura-search').disabled = false;
+        document.getElementById('fattura-search').disabled = true;
         document.getElementById('selected-fattura-id').value = "";
-        document.getElementById('btn-reset-fattura').classList.add('hidden');
+        //document.getElementById('btn-reset-fattura').classList.add('hidden');
     }
 
     function selezionaCliente(id, nome, zona) {
@@ -856,11 +859,31 @@
         const n = document.getElementById('selected-cliente-id');
         const cliente = anagraficheClienti.find(c => c.id === id); // Trova oggetto completo
         const listino = (cliente && cliente.listino && cliente.listino.trim() !== "") ? cliente.listino : null;
+        const clienteScelto = anagraficheClienti.find(c => c.id === id);
 
         v.value = `${id} - ${nome}`; v.disabled = true;
         n.value = id; 
         n.dataset.zona = zona;
         n.dataset.listino = listino || ""; // Salva il listino o null nel dataset
+        
+        // LOGICA AUTOMATICA FATTURAZIONE
+        if (clienteScelto && clienteScelto.idFattura && clienteScelto.idFattura !== id) {
+            // Cerca i dati del cliente a cui fatturare nell'anagrafica
+            const dittaFattura = anagraficheClienti.find(c => c.id === clienteScelto.idFattura);
+            
+            if (dittaFattura) {
+                // Se lo trova, compila il campo fatturazione
+                selezionaFatturazione(dittaFattura.id, dittaFattura.nome);
+            } else {
+                // Se l'ID fattura non esiste in anagrafica, resetta per sicurezza
+                resetFattura();
+                console.warn("ID Fatturazione " + clienteScelto.idFattura + " non trovato in anagrafica.");
+            }
+        } else {
+            // Se gli ID sono uguali, pulisci il campo fatturazione (usa lo stesso)
+            resetFattura();
+        }
+        
         document.getElementById('clienti-suggeriti').style.display = 'none';
         document.getElementById('btn-reset-cliente').style.display = 'block';
         aggiornaPrezziListino(cliente.listino);
@@ -894,9 +917,16 @@
     }
     function resetCliente() {
         const v = document.getElementById('cliente-search');
-        v.value = ''; v.disabled = false;
+        const n = document.getElementById('selected-cliente-id');
+
+        v.value = ''; 
+        v.disabled = false;
+        n.value = "";
+        n.dataset.listino = "";
         document.getElementById('selected-cliente-id').value = '';
         document.getElementById('btn-reset-cliente').style.display = 'none';
+        resetFattura();
+        aggiornaPrezziListino(null);
     }
 
     function pulisciErrore(el) {
@@ -1087,7 +1117,7 @@
     }
 
     function generaHTMLStampaCarico(doc) {
-        const dataFmt = doc.data.split('-').reverse().join('/');
+        const dataFmt = doc.data.split('-').reverse().join('/') + " alle " + formatOraCSV().slice(0,2) + ":" + formatOraCSV().slice(2,4);
         
         let righeArticoli = doc.items.map(item => {
             const artAnag = anagraficaArticoli.find(a => a.id === item.id) || {};
@@ -1101,6 +1131,10 @@
                 </tr>
             `;
         }).join('');
+
+        if (doc.id.includes("MAGAZZINO")) {
+            numero = doc.id.split('/')[0] + '/' + doc.id.split('/')[1];
+        }
 
         // Restituiamo solo il contenuto necessario, lo stile lo iniettiamo nel contenitore
         return `
@@ -1119,6 +1153,11 @@
                 .footer-print { margin-top: 50px; display: flex; justify-content: space-between; }
                 .firma { border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 5px; font-size: xx-small; margin-top: 40px;}
                 
+                .footer-legale { margin-top: 30px; font-size: 9px; line-height: 1.4; border-top: 1px solid #eee; padding-top: 10px; }
+                .firme-wrap { display: flex; justify-content: space-between; margin-top: 40px; }
+                .firma-box { width: 45%; border-top: 1px solid #333; text-align: center; padding-top: 5px; }
+                .lingua-de { font-style: italic; color: #666; display: block; font-size: 8px; }
+
                 @media print {
                     .no-print { display: none; }
                     body { margin: 0; }
@@ -1128,14 +1167,12 @@
                 <div class="header-print">
                     <img src="logo.png" class="logo-print" alt="LOGO">
                     <div class="info-doc">
-                        <strong style="font-size: xx-small;">DOCUMENTO DI CARICO</strong><br>
-                        Numero: <b>${doc.id}</b><br>
+                        <strong style="font-size: xx-small;">DOCUMENTO DI TRASPORTO</strong><br>
+                        Numero: <b>${numero}</b><br>
                         Data: <b>${dataFmt}</b><br>
                         Agente/Targa: <b>${doc.targa || 'N.D.'}</b>
                     </div>
                 </div>
-
-                <div class="titolo-doc">Carico Magazzino</div>
 
                 <table>
                     <thead>
@@ -1152,9 +1189,17 @@
                     </tbody>
                 </table>
 
-                <div class="footer-print">
-                    <div class="firma">Firma Conducente</div>
+                <div class="firma-box">
+                    <strong>FIRMA CONDUCENTE</strong>
+                    <span class="lingua-de">UNTERSCHRIFT DES FAHRERS</span>
                 </div>
+                
+                <div class="footer-legale">
+                    <p style="text-align: left; font-weight: bold; margin-bottom: 5px;">
+                      Causale del trasporto: Tentata vendita. Documento di trasporto beni viaggianti a titolo di tentata vendita.  
+                    </p>
+                </div>
+
             </div>
         `;
     }
@@ -1192,7 +1237,7 @@
 
         const bloccoTotale = (haPrezzi && totaleDocumento > 0) 
             ? `<div style="text-align: right; margin-top: 10px; font-size: xx-small;">
-                <strong>TOTALE DOCUMENTO / GESAMTBETRAG: € ${totaleDocumento.toFixed(2)}</strong>
+                <strong>${totaleDocumento.toFixed(2)}</strong>
             </div>` 
             : '';
 
@@ -1204,17 +1249,17 @@
                 const cFatt = anagraficheClienti.find(cli => cli.id === doc.fatturaId) || {};
                 bloccoClientiHTML = `
                     <div style="display: flex; gap: 20px;">
-                        <div class="sezione-cliente" style="flex: 1;">
-                            <span style="font-size: 9px; text-transform: uppercase;">Fatturare a / Rechnung an:</span><br>
-                            <strong>${cFatt.nome}</strong><br>
-                            ${cFatt.rg2}<br>
-                            ${cFatt.indirizzo}<br>${cFatt.cap} ${cFatt.citta} (${cFatt.prov}) <br> ${cFatt.piva ? 'P.IVA: ' + cFatt.piva : ''}
-                        </div>
                         <div class="sezione-cliente" style="flex: 1; border-left: 2px solid #eee;">
                             <span style="font-size: 9px; text-transform: uppercase;">Destinatario / Empfänger:</span><br>
                             <strong>${cDest.nome}</strong><br>
                             ${cDest.rg2}<br>
                             ${cDest.indirizzo}<br>${cDest.cap} ${cDest.citta} (${cDest.prov})
+                        </div>
+                        <div class="sezione-cliente" style="flex: 1;">
+                            <span style="font-size: 9px; text-transform: uppercase;">Cliente a cui Fatturare / Kunde:</span><br>
+                            <strong>${cFatt.nome}</strong><br>
+                            ${cFatt.rg2}<br>
+                            ${cFatt.indirizzo}<br>${cFatt.cap} ${cFatt.citta} (${cFatt.prov}) <br> ${cFatt.piva ? 'P.IVA: ' + cFatt.piva : ''}
                         </div>
                     </div>
                 `;
