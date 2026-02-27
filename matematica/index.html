@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathMaster Challenge - Interi & Frazioni</title>
+    <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+
+<div class="game-container">
+    <header>
+        <h1>Math Challenge</h1>
+        <div class="stats">
+            <span id="mode-badge" class="badge mode-badge" style="display:none"></span>
+            <span id="diff-badge" class="badge" style="display:none"></span>
+            <span class="badge" style="background:#333">Punti: <b id="score">0</b></span>
+        </div>
+        <div id="prog-text" class="progress" style="display:none">Esercizio <span id="current-step">1</span>/10</div>
+    </header>
+
+    <div id="mode-box" class="selector-box">
+        <h3>Scegli Modalità:</h3>
+        <button onclick="selectMode('integers')">🔢 Numeri Interi</button>
+        <button onclick="selectMode('fractions')">🍕 Frazioni (Pizza Mode)</button>
+    </div>
+
+    <div id="diff-box" class="selector-box" style="display:none">
+        <h3>Difficoltà:</h3>
+        <button onclick="initSession('easy')">Facile</button>
+        <button onclick="initSession('medium')">Medio</button>
+        <button onclick="initSession('hard')">Difficile</button>
+    </div>
+
+    <div id="visual-helper" class="visual-helper"></div>
+    <div id="grid-container" class="grid-container" style="display:none"></div>
+    <div id="feedback" class="feedback-message"></div>
+    <div id="attempt-info" style="font-size: 0.8rem; color: #636e72; margin-top: 5px;"></div>
+    
+    <div class="controls">
+        <button id="check-btn" class="main-btn" onclick="checkAnswers()">Verifica</button>
+        <button id="next-btn" class="main-btn next-btn" onclick="nextLevel()">Prossimo ➔</button>
+        <button id="back-btn" class="main-btn back-btn" onclick="resetToMenu()" style="display:none; background-color: #95a5a6;">↩ Torna al Menù</button>
+    </div>
+
+
+    <button id="check-btn" class="main-btn" onclick="checkAnswers()">Verifica</button>
+    <button id="next-btn" class="main-btn next-btn" onclick="nextLevel()">Prossimo ➔</button>
+</div>
+</body>
+<script src="script.js"></script>
+</html>
