@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candela Realistica - Fix Consumo</title>
+    <style>
+        body {
+            background: #050505;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        #timer {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: #ffaa00;
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+            z-index: 10;
+        }
+
+        #start-btn {
+            position: absolute;
+            z-index: 100;
+            padding: 15px 40px;
+            background: #ffaa00;
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
+        }
+
+        .scene {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            height: 300px;
+        }
+
+        .candle-body {
+            width: 60px;
+            height: 200px; /* Altezza base */
+            background: linear-gradient(to right, #ddd, #fff 30%, #bbb);
+            border-radius: 6px 6px 4px 4px;
+            position: relative;
+            transition: height 0.1s linear; /* Per rendere fluidi i piccoli cambi di stato */
+        }
+
+        /* Classe che attiva l'animazione */
+        .melting-active { 
+            animation: melt-height 10s linear forwards; 
+        }
+
+        @keyframes melt-height {
+            0% { height: 200px; }
+            100% { height: 40px; }
+        }
+
+        .wick {
+            width: 4px;
+            height: 12px;
+            background: #111;
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .flame-container {
+            position: absolute;
+            top: -55px;
+            left: 50%;
+            transform: translateX(-50%);
+            transform-origin: bottom center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .flame-container.active { opacity: 1; }
+
+        .flame {
+            width: 22px;
+            height: 50px;
+            background: radial-gradient(ellipse at bottom, #fff 0%, #ffffaa 20%, #ffaa00 50%, #ff4400 95%);
+            border-radius: 50% 50% 35% 35%;
+            filter: blur(1px);
+            animation: flicker 0.1s ease-in-out infinite alternate;
+            box-shadow: 0 0 30px #ffaa00, 0 0 60px rgba(255, 68, 0, 0.4);
+        }
+
+        @keyframes flicker {
+            0% { transform: scale(1) rotate(-1deg); }
+            100% { transform: scale(1.05) rotate(1deg); }
+        }
+
+        .smoke-particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(150,150,150,0.4) 0%, rgba(100,100,100,0.1) 40%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(5px);
+        }
+
+        @keyframes rise-smoke {
+            0% { transform: translateY(0) scale(0.3); opacity: 0; }
+            15% { opacity: 0.6; }
+            100% { transform: translateY(-350px) translateX(var(--tilt-drift)) scale(5); opacity: 0; }
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <button id="start-btn">ACCENDI</button>
+    <div id="timer">10.0s</div>
+
+    <div class="scene">
+        <div class="candle-body" id="candle">
+            <div class="wick" id="wick"></div>
+            <div class="flame-container" id="flame-box">
+                <div class="flame"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const timerElement = document.getElementById('timer');
+        const flameBox = document.getElementById('flame-box');
+        const candle = document.getElementById('candle');
+        const wick = document.getElementById('wick');
+        const startBtn = document.getElementById('start-btn');
+        
+        let timeLeft = 10.0;
+        let tiltAngle = 0;
+        let isMelting = false;
+        let countdownInterval;
+        let audioContext, analyser, dataArray;
+        let canBlow = false;
+
+        window.addEventListener('deviceorientation', (e) => {
+            if (e.gamma !== null) {
+                tiltAngle = e.gamma; 
+                if (isMelting) flameBox.style.transform = `translateX(-50%) rotate(${-tiltAngle}deg)`;
+            }
+        });
+
+        startBtn.addEventListener('click', async () => {
+            if (!audioContext) await initMicrophone();
+            resetAndStart();
+        });
+
+        function resetAndStart() {
+            clearInterval(countdownInterval);
+            timeLeft = 10.0;
+            timerElement.textContent = "10.0s";
+            canBlow = false;
+            
+            // RESET TOTALE: Rimuovo animazione e forzo altezza iniziale
+            candle.classList.remove('melting-active');
+            candle.style.height = "200px"; 
+            void candle.offsetWidth; // Force reflow
+            
+            isMelting = true;
+            startBtn.classList.add('hidden');
+            flameBox.classList.add('active');
+            
+            // Avvio animazione
+            candle.classList.add('melting-active');
+
+            countdownInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                if (timeLeft <= 0) {
+                    timeLeft = 0;
+                    extinguish();
+                }
+                timerElement.textContent = Math.max(0, timeLeft).toFixed(1) + 's';
+            }, 100);
+
+            setTimeout(() => { canBlow = true; }, 400);
+        }
+
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                analyser.fftSize = 512;
+                microphone.connect(analyser);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                const monitor = () => {
+                    if (isMelting && canBlow) {
+                        analyser.getByteFrequencyData(dataArray);
+                        let values = 0;
+                        for (let i = 20; i < dataArray.length; i++) values += dataArray[i];
+                        let average = values / (dataArray.length - 20);
+
+                        if (average > 25) extinguish(); 
+                    }
+                    requestAnimationFrame(monitor);
+                };
+                monitor();
+            } catch (err) {
+                console.log("Microfono non attivato.");
+            }
+        }
+
+        function extinguish() {
+            if (!isMelting) return;
+            isMelting = false;
+            clearInterval(countdownInterval);
+            
+            // SALVA L'ALTEZZA ATTUALE E FERMA L'ANIMAZIONE
+            const currentHeight = window.getComputedStyle(candle).height;
+            candle.classList.remove('melting-active');
+            candle.style.height = currentHeight; // Blocca la candela dove si trova
+
+            flameBox.classList.remove('active');
+            
+            createSoftSmoke();
+
+            setTimeout(() => {
+                startBtn.classList.remove('hidden');
+                startBtn.textContent = "RIACCENDI";
+            }, 3000);
+        }
+
+        function createSoftSmoke() {
+            const wickRect = wick.getBoundingClientRect();
+            for (let i = 0; i < 35; i++) {
+                setTimeout(() => {
+                    if (isMelting) return;
+                    const s = document.createElement('div');
+                    s.className = 'smoke-particle';
+                    const size = Math.random() * 40 + 30;
+                    const tiltEffect = (tiltAngle * -4) + (Math.random() * 100 - 50);
+                    
+                    s.style.width = size + 'px';
+                    s.style.height = size + 'px';
+                    s.style.left = (wickRect.left - size/2 + 2) + 'px';
+                    s.style.top = (wickRect.top - 20) + 'px';
+                    s.style.setProperty('--tilt-drift', tiltEffect + 'px');
+                    s.style.animation = 'rise-smoke 5s ease-out forwards';
+                    
+                    document.body.appendChild(s);
+                    setTimeout(() => s.remove(), 5000);
+                }, i * 70);
+            }
+        }
+    </script>
+</body>
+</html>

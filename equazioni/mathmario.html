@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathQuest – La Matematica è un'Avventura!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap');
+
+  :root {
+    --sky: #5c94fc;
+    --ground: #c84b0c;
+    --brick: #e07020;
+    --gold: #f8d800;
+    --mario-red: #e52521;
+    --white: #fff;
+    --dark: #1a0a00;
+    --green: #3cb44b;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --cloud: #ffffffcc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--sky);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ─── STARS / CLOUDS BACKGROUND ─── */
+  .bg-layer {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  }
+  .cloud {
+    position: absolute;
+    background: var(--cloud);
+    border-radius: 50px;
+    animation: cloudMove linear infinite;
+    opacity: .85;
+  }
+  .cloud::before, .cloud::after {
+    content:''; position:absolute; background: var(--cloud); border-radius:50%;
+  }
+  @keyframes cloudMove { from{transform:translateX(-200px)} to{transform:translateX(110vw)} }
+
+  /* ─── PIXEL STARS ─── */
+  .star {
+    position:absolute; width:6px; height:6px; background:var(--gold);
+    animation: blink 1.5s ease-in-out infinite alternate;
+    border-radius:1px;
+  }
+  @keyframes blink { from{opacity:0} to{opacity:1} }
+
+  /* ─── SCREENS ─── */
+  .screen {
+    position: relative; z-index: 10;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .screen.hidden { display: none; }
+
+  /* ─── PANEL ─── */
+  .panel {
+    background: var(--dark);
+    border: 6px solid var(--gold);
+    border-radius: 12px;
+    box-shadow: 0 0 0 3px var(--mario-red), 0 20px 60px #0008;
+    padding: 40px 36px;
+    max-width: 540px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content:'';
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 31px, #ffffff08 31px, #ffffff08 32px);
+    pointer-events:none;
+  }
+
+  /* ─── TITLE ─── */
+  .pixel-title {
+    font-family: 'Press Start 2P', monospace;
+    color: var(--gold);
+    font-size: clamp(14px, 3vw, 22px);
+    line-height: 1.6;
+    text-shadow: 3px 3px 0 var(--mario-red), 6px 6px 0 #8b0000;
+    margin-bottom: 8px;
+    animation: titleBounce 2s ease-in-out infinite;
+  }
+  @keyframes titleBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+  .subtitle {
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 28px;
+    font-style: italic;
+  }
+
+  /* ─── MARIO SPRITE (CSS) ─── */
+  .mario-sprite {
+    font-size: 64px;
+    display: block;
+    margin: 0 auto 16px;
+    animation: marioJump 1s ease-in-out infinite alternate;
+    filter: drop-shadow(0 6px 0 #0004);
+  }
+  @keyframes marioJump { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+
+  /* ─── FORM ─── */
+  .form-group { margin-bottom: 18px; text-align: left; }
+  .form-group label {
+    display: block;
+    color: var(--gold);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    margin-bottom: 8px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 3px solid var(--gold);
+    background: #fff1;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    outline: none;
+    transition: border-color .2s, background .2s;
+  }
+  .form-group input::placeholder { color: #aaa; }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--mario-red);
+    background: #fff2;
+  }
+  .form-group select option { background: #1a0a00; color: #fff; }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 14px 28px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform .1s, box-shadow .1s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    top: 0;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: none !important; }
+  .btn-primary {
+    background: var(--mario-red);
+    color: #fff;
+    box-shadow: 0 6px 0 #7a0000;
+  }
+  .btn-primary:hover { box-shadow: 0 8px 0 #7a0000; transform:translateY(-2px); }
+  .btn-gold {
+    background: var(--gold);
+    color: var(--dark);
+    box-shadow: 0 6px 0 #a89000;
+  }
+  .btn-gold:hover { box-shadow: 0 8px 0 #a89000; transform:translateY(-2px); }
+  .btn-green {
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 6px 0 #1e6b2e;
+  }
+  .btn-green:hover { box-shadow: 0 8px 0 #1e6b2e; transform:translateY(-2px); }
+  .btn-sm { font-size: 8px; padding: 10px 16px; }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-wrap {
+    background: #fff1;
+    border: 3px solid var(--gold);
+    border-radius: 30px;
+    height: 22px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mario-red), var(--gold));
+    border-radius: 30px;
+    transition: width .5s cubic-bezier(.34,1.56,.64,1);
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '★';
+    position: absolute; right: 6px; top: 0;
+    font-size: 14px; line-height: 18px;
+    color: #fff;
+  }
+
+  /* ─── GAME SCREEN ─── */
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hud-item {
+    background: #fff1;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--gold);
+  }
+  .hearts { font-size: 16px; letter-spacing: 2px; }
+
+  /* ─── GAME CANVAS ─── */
+  .game-canvas-wrap {
+    position: relative;
+    width: 100%;
+    background: var(--sky);
+    border: 4px solid var(--gold);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    height: 220px;
+  }
+  canvas#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ─── EQUATION DISPLAY ─── */
+  .equation-box {
+    background: #fff;
+    border: 4px solid var(--dark);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--dark);
+    font-family: 'Nunito', sans-serif;
+    box-shadow: 4px 4px 0 var(--dark);
+  }
+  .equation-box .eq-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #888;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .eq-type-badge {
+    display: inline-block;
+    background: var(--purple);
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+
+  /* ─── INPUT ANSWER ─── */
+  .answer-row {
+    display: flex; gap: 10px; align-items: stretch; margin-bottom: 14px;
+  }
+  .answer-row input {
+    flex: 1;
+    padding: 14px 18px;
+    border: 4px solid var(--dark);
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 900;
+    font-family: 'Nunito', sans-serif;
+    color: var(--dark);
+    outline: none;
+    box-shadow: 4px 4px 0 var(--dark);
+    transition: border-color .2s;
+  }
+  .answer-row input:focus { border-color: var(--mario-red); }
+  .answer-row input.wrong { border-color: var(--mario-red); animation: shake .3s; }
+  .answer-row input.correct { border-color: var(--green); }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-8px)}
+    80%{transform:translateX(4px)}
+  }
+
+  /* ─── HINT BOX ─── */
+  .hint-box {
+    background: linear-gradient(135deg, #fff7e6, #ffe9b5);
+    border: 3px solid var(--gold);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #7a4f00;
+    text-align: left;
+    display: flex; gap: 10px; align-items: flex-start;
+    box-shadow: 3px 3px 0 var(--gold);
+    animation: fadeIn .4s;
+  }
+  .hint-box .hint-icon { font-size: 22px; flex-shrink:0; }
+  .hint-box.hidden { display: none; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ─── MOTIVATION MSG ─── */
+  .motivation-msg {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--gold);
+    min-height: 24px;
+    text-align: center;
+    animation: fadeIn .5s;
+    margin-bottom: 10px;
+  }
+
+  /* ─── FEEDBACK OVERLAY ─── */
+  .feedback-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .feedback-bubble {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(18px, 5vw, 36px);
+    color: #fff;
+    text-shadow: 4px 4px 0 #0007;
+    animation: popBubble .8s forwards;
+    opacity: 0;
+  }
+  @keyframes popBubble {
+    0%{opacity:0;transform:scale(.4) translateY(40px)}
+    40%{opacity:1;transform:scale(1.15) translateY(-10px)}
+    70%{opacity:1;transform:scale(.95)}
+    100%{opacity:0;transform:scale(1) translateY(-60px)}
+  }
+
+  /* ─── COINS ─── */
+  .coin-anim {
+    position: fixed;
+    pointer-events: none;
+    z-index: 998;
+    font-size: 28px;
+    animation: coinFly .9s forwards;
+  }
+  @keyframes coinFly {
+    0%{opacity:1;transform:translateY(0) scale(1)}
+    100%{opacity:0;transform:translateY(-120px) scale(1.4)}
+  }
+
+  /* ─── RESULT SCREEN ─── */
+  .result-stars {
+    font-size: 44px;
+    letter-spacing: 6px;
+    margin: 10px 0 4px;
+    animation: starPop .5s ease-out both;
+  }
+  @keyframes starPop { from{transform:scale(0) rotate(-20deg)} to{transform:scale(1) rotate(0)} }
+  .result-score {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 28px;
+    color: var(--gold);
+    text-shadow: 3px 3px 0 var(--mario-red);
+    margin: 10px 0;
+  }
+  .result-table {
+    width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;
+  }
+  .result-table th {
+    background: var(--gold); color: var(--dark);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px; padding: 8px; text-align: left;
+  }
+  .result-table td { padding: 8px 10px; border-bottom: 1px solid #fff2; color: #ddd; }
+  .result-table tr:nth-child(even) td { background: #fff1; }
+  .result-table .ok { color: #4ade80; }
+  .result-table .ko { color: #f87171; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 500px) {
+    .panel { padding: 24px 16px; }
+    .hud { flex-direction: column; align-items: flex-start; }
+    .answer-row { flex-direction: column; }
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-layer" id="bgLayer"></div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1 – LOGIN
+════════════════════════════════════════════ -->
+<div class="screen" id="screenLogin">
+  <div class="panel">
+  <span class="mario-sprite">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="80" height="80" style="image-rendering:pixelated;display:block;margin:0 auto">
+      <!-- Hat -->
+      <rect x="4" y="0" width="8" height="2" fill="#e52521"/>
+      <rect x="2" y="2" width="12" height="2" fill="#e52521"/>
+      <!-- Hair/face -->
+      <rect x="2" y="4" width="4" height="1" fill="#7a3b00"/>
+      <rect x="6" y="4" width="6" height="1" fill="#ffc9a0"/>
+      <rect x="12" y="4" width="2" height="1" fill="#7a3b00"/>
+      <rect x="2" y="5" width="12" height="3" fill="#ffc9a0"/>
+      <!-- Eyes -->
+      <rect x="4" y="5" width="2" height="1" fill="#1a0a00"/>
+      <rect x="10" y="5" width="2" height="1" fill="#1a0a00"/>
+      <!-- Moustache -->
+      <rect x="3" y="7" width="10" height="1" fill="#7a3b00"/>
+      <rect x="2" y="8" width="5" height="1" fill="#7a3b00"/>
+      <rect x="9" y="8" width="5" height="1" fill="#7a3b00"/>
+      <!-- Body overalls -->
+      <rect x="3" y="9" width="10" height="4" fill="#003087"/>
+      <rect x="2" y="10" width="12" height="2" fill="#e52521"/>
+      <!-- Buttons -->
+      <rect x="5" y="9" width="1" height="1" fill="#ffc9a0"/>
+      <rect x="10" y="9" width="1" height="1" fill="#ffc9a0"/>
+      <!-- Legs -->
+      <rect x="3" y="13" width="4" height="2" fill="#e52521"/>
+      <rect x="9" y="13" width="4" height="2" fill="#e52521"/>
+      <!-- Shoes -->
+      <rect x="2" y="15" width="5" height="1" fill="#5c3600"/>
+      <rect x="9" y="15" width="5" height="1" fill="#5c3600"/>
+    </svg>
+  </span>
+    <div class="pixel-title">MATH<br>QUEST</div>
+    <p class="subtitle">La matematica è un'avventura!</p>
+
+    <div class="form-group">
+      <label>Il tuo nome</label>
+      <input type="text" id="inputName" placeholder="Es. Mario Rossi" maxlength="30">
+    </div>
+    <div class="form-group">
+      <label>La tua classe</label>
+      <select id="inputClass">
+        <option value="">-- Seleziona --</option>
+        <option value="1A OC">1A OC</option>
+        <option value="1A OSI">1A OSI</option>
+        <option value="1B OSI">1B OSI</option>
+        <option value="1C OSI">1C OSI</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()" style="width:100%;margin-top:8px">
+      ▶ INIZIA L'AVVENTURA!
+    </button>
+    <p style="color:#888;font-size:11px;margin-top:16px">10 livelli · dalla retta alla parabola</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2 – GAME
+════════════════════════════════════════════ -->
+<div class="screen hidden" id="screenGame" style="padding:16px">
+  <div class="panel" style="max-width:640px">
+
+    <div class="hud">
+      <div class="hud-item" id="hudName">👤 —</div>
+      <div class="hud-item" id="hudLevel">LVL 1/10</div>
+      <div class="hud-item" id="hudScore">⭐ 0</div>
+      <div class="hud-item hearts" id="hudHearts">❤️❤️❤️</div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+
+    <!-- Mini canvas -->
+    <div class="game-canvas-wrap">
+      <canvas id="gameCanvas" width="600" height="220"></canvas>
+    </div>
+
+    <div class="motivation-msg" id="motivationMsg"></div>
+
+    <!-- Equation display -->
+    <div class="equation-box">
+      <span class="eq-label">EQUAZIONE DA USARE</span>
+      <span class="eq-type-badge" id="eqTypeBadge">Lineare</span><br>
+      <span id="eqDisplay" style="font-size:18px">y = mx + q</span>
+    </div>
+
+    <!-- Question -->
+    <div style="color:#ddd;font-size:15px;font-weight:700;margin-bottom:10px;text-align:left" id="questionText"></div>
+
+    <!-- Hint -->
+    <div class="hint-box hidden" id="hintBox">
+      <span class="hint-icon">💡</span>
+      <span id="hintText"></span>
+    </div>
+
+    <!-- Answer -->
+    <div class="answer-row">
+      <input type="text" id="answerInput" placeholder="Inserisci la risposta..." autocomplete="off" onkeydown="if(event.key==='Enter')checkAnswer()">
+      <button class="btn btn-primary" onclick="checkAnswer()">✔</button>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;min-height:44px">
+      <button class="btn btn-sm" id="hintBtn" onclick="showHint()" style="background:#f59e0b;color:#1a0a00;box-shadow:0 4px 0 #92400e;display:none">
+        💡 AIUTO
+      </button>
+      <span id="hintCounter" style="font-size:11px;color:#aaa;align-self:center"></span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3 – RESULT
+════════════════════════════════════════════ -->
+<div class="screen hidden" id="screenResult">
+  <div class="panel" style="max-width:600px">
+    <div class="mario-sprite" id="resultEmoji">🏆</div>
+    <div class="pixel-title" id="resultTitle">COMPLIMENTI!</div>
+    <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+    <div class="result-score" id="resultScore">1000 PT</div>
+    <p id="resultMsg" style="color:#ddd;margin:8px 0 16px;font-size:15px"></p>
+
+    <table class="result-table">
+      <thead>
+        <tr><th>LVL</th><th>DOMANDA</th><th>TIPO</th><th>ESITO</th></tr>
+      </thead>
+      <tbody id="resultTableBody"></tbody>
+    </table>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:16px">
+      <button class="btn btn-primary" onclick="restartGame()">🔄 GIOCA ANCORA</button>
+      <button class="btn btn-gold" onclick="shareResult()">📤 CONDIVIDI</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback overlay -->
+<div class="feedback-overlay" id="feedbackOverlay"></div>
+
+<script>
+/* ════════════════════════════════════
+   DATA & STATE
+════════════════════════════════════ */
+let playerName = '', playerClass = '';
+let currentLevel = 0;
+let score = 0;
+let lives = 3;
+let wrongStreak = 0;
+let hintUsed = false;
+let hintShown = false;
+let gameLog = [];
+let animFrame;
+
+const MOTIVATIONS_CORRECT = [
+  "FANTASTICO! 🌟", "SEI UN GENIO! 🧠", "PERFETTO! ⭐",
+  "INCREDIBILE! 🎉", "BRAVO/A! 🏆", "CONTINUA COSÌ! 💪",
+  "MATEMATICO/A PROVETTO/A! 📐", "SUPER! 🚀"
+];
+const MOTIVATIONS_WRONG = [
+  "Quasi! Riprova 💪", "Non mollare! 🔥", "Ci sei quasi! ⚡",
+  "Sbagliando si impara! 📚", "Un altro tentativo! 💡"
+];
+const MOTIVATIONS_HINT = [
+  "Ecco un piccolo aiuto! 🧩", "Usa questo indizio! 💡",
+  "La matematica ha i suoi trucchi! 🎓"
+];
+
+/* ════════════════════════════════════
+   10 LEVELS – crescente difficoltà
+════════════════════════════════════ */
+const LEVELS = [
+  /* 1 */ {
+    type: "Lineare",
+    equation: "y = 2x + 1",
+    question: "Qual è il valore di y quando x = 3?",
+    answer: "7",
+    hint: "Sostituisci x=3: y = 2×3 + 1 = 6 + 1 = ?",
+    coinX: 0.6, coinY: 0.45,
+    parabola: false,
+    fn: x => 2*x+1,
+    xRange: [0,10]
+  },
+  /* 2 */ {
+    type: "Lineare",
+    equation: "y = -x + 5",
+    question: "Qual è il valore di y quando x = 2?",
+    answer: "3",
+    hint: "Sostituisci x=2: y = -(2) + 5 = ?",
+    coinX: 0.5, coinY: 0.4,
+    fn: x => -x+5,
+    xRange: [0,10]
+  },
+  /* 3 */ {
+    type: "Lineare",
+    equation: "y = 3x - 4",
+    question: "Trova x quando y = 5 (y = 3x - 4 → x = ?)",
+    answer: "3",
+    hint: "5 = 3x - 4 → 3x = 9 → x = ?",
+    coinX: 0.55, coinY: 0.38,
+    fn: x => 3*x-4,
+    xRange: [0,8]
+  },
+  /* 4 */ {
+    type: "Quadratica",
+    equation: "y = x² - 4",
+    question: "Qual è il valore di y quando x = 3?",
+    answer: "5",
+    hint: "y = 3² - 4 = 9 - 4 = ?",
+    coinX: 0.6, coinY: 0.4,
+    fn: x => x*x-4,
+    xRange: [0,8]
+  },
+  /* 5 */ {
+    type: "Quadratica",
+    equation: "y = (x-2)² + 1",
+    question: "Qual è il valore di y quando x = 4?",
+    answer: "5",
+    hint: "y = (4-2)² + 1 = 4 + 1 = ?",
+    coinX: 0.65, coinY: 0.42,
+    fn: x => (x-2)*(x-2)+1,
+    xRange: [0,8]
+  },
+  /* 6 */ {
+    type: "Quadratica",
+    equation: "y = -x² + 9",
+    question: "Per quale valore di x la funzione vale 0? (risposta positiva)",
+    answer: "3",
+    hint: "0 = -x² + 9 → x² = 9 → x = ?",
+    coinX: 0.7, coinY: 0.36,
+    fn: x => -x*x+9,
+    xRange: [0,8]
+  },
+  /* 7 */ {
+    type: "Quadratica",
+    equation: "y = 2(x-3)² - 2",
+    question: "Qual è la coordinata x del vertice?",
+    answer: "3",
+    hint: "Forma y = a(x-h)²+k: il vertice è (h, k). Qui h = ?",
+    coinX: 0.55, coinY: 0.35,
+    fn: x => 2*(x-3)*(x-3)-2,
+    xRange: [0,8]
+  },
+  /* 8 */ {
+    type: "Quadratica",
+    equation: "y = x² - 5x + 6",
+    question: "Qual è uno dei due zeri della funzione? (x intero positivo)",
+    answer: "2",
+    accept: ["2","3"],
+    hint: "Fattorizza: (x-2)(x-3) = 0 → x = 2 oppure x = 3",
+    coinX: 0.58, coinY: 0.38,
+    fn: x => x*x-5*x+6,
+    xRange: [0,8]
+  },
+  /* 9 */ {
+    type: "Quadratica",
+    equation: "y = -1(x-5)² + 4",
+    question: "Qual è il valore massimo di y? (vertice)",
+    answer: "4",
+    hint: "La forma vertice è y = a(x-h)²+k. Il massimo è k = ?",
+    coinX: 0.7, coinY: 0.28,
+    fn: x => -(x-5)*(x-5)+4,
+    xRange: [0,10]
+  },
+  /* 10 */ {
+    type: "Quadratica",
+    equation: "y = x² - 6x + 5",
+    question: "Calcola il discriminante Δ = b² - 4ac (a=1, b=-6, c=5)",
+    answer: "16",
+    hint: "Δ = (-6)² - 4×1×5 = 36 - 20 = ?",
+    coinX: 0.62, coinY: 0.32,
+    fn: x => x*x-6*x+5,
+    xRange: [0,8]
+  }
+];
+
+/* ════════════════════════════════════
+   CANVAS GAME ENGINE
+════════════════════════════════════ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game objects
+let mario = { x: 0, y: 0, vy: 0, jumping: false, frame: 0 };
+let coin = { x: 0, y: 0, collected: false, bobAngle: 0 };
+let curve = [];
+let gamePhase = 'idle'; // idle | running | success | fail
+let marioRunT = 0;
+let groundY;
+
+function initCanvas() {
+  canvas.width = 600; canvas.height = 220;
+  groundY = canvas.height - 36;
+  mario.x = 60;
+  mario.y = groundY - 32;
+  mario.vy = 0;
+  mario.jumping = false;
+  mario.frame = 0;
+  gamePhase = 'idle';
+  marioRunT = 0;
+  buildCurve();
+  placeCoin();
+  renderFrame();
+}
+
+function buildCurve() {
+  const lv = LEVELS[currentLevel];
+  const [xMin, xMax] = lv.xRange;
+  const steps = 120;
+  curve = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const xVal = xMin + t * (xMax - xMin);
+    const yVal = lv.fn(xVal);
+    curve.push({ t, xVal, yVal });
+  }
+  // Normalize to canvas
+  const ys = curve.map(p => p.yVal);
+  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  const marginH = 30;
+  curve.forEach(p => {
+    p.cx = 30 + p.t * (canvas.width - 60);
+    p.cy = groundY - marginH - ((p.yVal - yMin) / (Math.max(yMax - yMin, 1))) * (groundY - marginH - 20);
+  });
+}
+
+function placeCoin() {
+  const lv = LEVELS[currentLevel];
+  coin.x = lv.coinX * canvas.width;
+  coin.y = lv.coinY * groundY;
+  coin.collected = false;
+  coin.bobAngle = 0;
+}
+
+function renderFrame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawSky();
+  drawGround();
+  drawCurve();
+  drawCoin();
+  drawMario();
+  if (gamePhase === 'running') {
+    animFrame = requestAnimationFrame(() => {
+      updateGame();
+      renderFrame();
+    });
+  }
+}
+
+function drawSky() {
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#3a7bdb');
+  grad.addColorStop(1, '#5c94fc');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Simple clouds
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  [[80,30,40,14],[260,20,50,16],[450,35,35,12]].forEach(([x,y,w,h])=>{
+    ctx.beginPath();
+    ctx.ellipse(x,y,w,h,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x+18,y-8,w*.7,h*.8,0,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function drawGround() {
+  // Brick ground
+  ctx.fillStyle = '#c84b0c';
+  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+  ctx.fillStyle = '#e07020';
+  for (let bx = 0; bx < canvas.width; bx += 32) {
+    ctx.fillRect(bx+1, groundY+1, 30, 16);
+    ctx.fillRect(bx+17, groundY+18, 14, 14);
+  }
+  ctx.fillStyle = '#a33a00';
+  for (let bx = 0; bx < canvas.width; bx += 32) {
+    ctx.fillRect(bx, groundY, 32, 2);
+    ctx.fillRect(bx+16, groundY+17, 1, 17);
+  }
+}
+
+function drawCurve() {
+  if (curve.length < 2) return;
+  ctx.beginPath();
+  ctx.moveTo(curve[0].cx, curve[0].cy);
+  for (let i = 1; i < curve.length; i++) ctx.lineTo(curve[i].cx, curve[i].cy);
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(curve[0].cx, curve[0].cy);
+  for (let i = 1; i < curve.length; i++) ctx.lineTo(curve[i].cx, curve[i].cy);
+  const grad = ctx.createLinearGradient(0,0,canvas.width,0);
+  grad.addColorStop(0,'#f8d800');
+  grad.addColorStop(.5,'#ff6b35');
+  grad.addColorStop(1,'#e52521');
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 4;
+  ctx.setLineDash([12,5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawCoin() {
+  if (coin.collected) return;
+  coin.bobAngle += 0.08;
+  const bobY = Math.sin(coin.bobAngle) * 5;
+  // Glow
+  const g = ctx.createRadialGradient(coin.x,coin.y+bobY,2,coin.x,coin.y+bobY,18);
+  g.addColorStop(0,'rgba(255,220,0,0.5)');
+  g.addColorStop(1,'rgba(255,220,0,0)');
+  ctx.beginPath();
+  ctx.arc(coin.x, coin.y+bobY, 18, 0, Math.PI*2);
+  ctx.fillStyle = g;
+  ctx.fill();
+  // Coin
+  ctx.beginPath();
+  ctx.arc(coin.x, coin.y+bobY, 10, 0, Math.PI*2);
+  ctx.fillStyle = '#f8d800';
+  ctx.fill();
+  ctx.strokeStyle = '#a89000';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#fff8';
+  ctx.beginPath();
+  ctx.arc(coin.x-3, coin.y+bobY-3, 4, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawMario() {
+  const mx = mario.x, my = mario.y;
+  // Body
+  ctx.fillStyle = '#e52521';
+  ctx.fillRect(mx-10, my-30, 20, 14);
+  // Hat
+  ctx.fillRect(mx-12, my-38, 24, 8);
+  ctx.fillStyle = '#c25e00';
+  ctx.fillRect(mx-8, my-32, 6, 6); // overalls
+  // Face
+  ctx.fillStyle = '#ffc9a0';
+  ctx.fillRect(mx-8, my-28, 16, 10);
+  // Eyes
+  ctx.fillStyle = '#1a0a00';
+  ctx.fillRect(mx+1, my-26, 4, 4);
+  // Moustache
+  ctx.fillStyle = '#1a0a00';
+  ctx.fillRect(mx-6, my-20, 14, 3);
+  // Legs (animated)
+  const leg = Math.sin(Date.now()/80) * 6;
+  ctx.fillStyle = '#003087';
+  if (!mario.jumping) {
+    ctx.fillRect(mx-8, my-16, 6, 16 + leg);
+    ctx.fillRect(mx+2, my-16, 6, 16 - leg);
+  } else {
+    ctx.fillRect(mx-8, my-16, 6, 14);
+    ctx.fillRect(mx+2, my-16, 6, 14);
+  }
+  // Shoes
+  ctx.fillStyle = '#5c3600';
+  if (!mario.jumping) {
+    ctx.fillRect(mx-10, my+leg, 8, 5);
+    ctx.fillRect(mx+2, my-leg, 8, 5);
+  } else {
+    ctx.fillRect(mx-10, my, 8, 5);
+    ctx.fillRect(mx+2, my, 8, 5);
+  }
+}
+
+function updateGame() {
+  if (gamePhase !== 'running') return;
+  marioRunT += 0.012;
+  if (marioRunT > 1) marioRunT = 1;
+  mario.x = 60 + marioRunT * (coin.x - 60);
+
+  // Simple arc jump to coin height
+  const progress = marioRunT;
+  const arcH = Math.max(30, groundY - coin.y - 20);
+  mario.y = groundY - 32 - Math.sin(progress * Math.PI) * arcH;
+
+  // Coin collection check
+  const dx = mario.x - coin.x, dy = mario.y - coin.y;
+  if (!coin.collected && Math.sqrt(dx*dx + dy*dy) < 24) {
+    coin.collected = true;
+    spawnCoins(coin.x, coin.y);
+  }
+
+  if (marioRunT >= 1) {
+    mario.y = groundY - 32;
+    gamePhase = 'idle';
+    cancelAnimationFrame(animFrame);
+  }
+}
+
+function triggerRunAnimation() {
+  marioRunT = 0;
+  gamePhase = 'running';
+  renderFrame();
+}
+
+/* ════════════════════════════════════
+   COIN SPAWN
+════════════════════════════════════ */
+function spawnCoins(x, y) {
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div');
+    el.className = 'coin-anim';
+    el.textContent = '🪙';
+    el.style.left = (x + (Math.random()-0.5)*60) + 'px';
+    el.style.top = y + 'px';
+    el.style.animationDelay = (i*0.08) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+}
+
+/* ════════════════════════════════════
+   BACKGROUND GENERATOR
+════════════════════════════════════ */
+function buildBackground() {
+  const bg = document.getElementById('bgLayer');
+  bg.innerHTML = '';
+  const cloudData = [
+    {top:'8%',left:'-5%',w:120,h:40,dur:28},
+    {top:'18%',left:'20%',w:90,h:30,dur:38},
+    {top:'5%',left:'60%',w:140,h:45,dur:24},
+    {top:'25%',left:'80%',w:80,h:28,dur:42},
+  ];
+  cloudData.forEach(d => {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.style.cssText = `top:${d.top};left:${d.left};width:${d.w}px;height:${d.h}px;animation-duration:${d.dur}s`;
+    bg.appendChild(c);
+  });
+}
+
+/* ════════════════════════════════════
+   GAME FLOW
+════════════════════════════════════ */
+function startGame() {
+  playerName = document.getElementById('inputName').value.trim();
+  playerClass = document.getElementById('inputClass').value;
+  if (!playerName) { alert('Inserisci il tuo nome! 😊'); return; }
+  if (!playerClass) { alert('Seleziona la tua classe! 🏫'); return; }
+  currentLevel = 0;
+  score = 0;
+  lives = 3;
+  gameLog = [];
+  show('screenGame');
+  loadLevel();
+}
+
+function loadLevel() {
+  if (currentLevel >= LEVELS.length) { showResult(); return; }
+  wrongStreak = 0;
+  hintUsed = false;
+  hintShown = false;
+
+  const lv = LEVELS[currentLevel];
+  document.getElementById('hudName').textContent = '👤 ' + playerName;
+  document.getElementById('hudLevel').textContent = `LVL ${currentLevel+1}/10`;
+  document.getElementById('hudScore').textContent = '⭐ ' + score;
+  updateHearts();
+  document.getElementById('progressFill').style.width = (currentLevel*10) + '%';
+  document.getElementById('eqTypeBadge').textContent = lv.type;
+  document.getElementById('eqDisplay').textContent = lv.equation;
+  document.getElementById('questionText').textContent = `❓ ${lv.question}`;
+  document.getElementById('hintBox').classList.add('hidden');
+  document.getElementById('hintBtn').style.display = 'none';
+  document.getElementById('hintBtn').disabled = false;
+  document.getElementById('hintCounter').textContent = '';
+  document.getElementById('answerInput').value = '';
+  document.getElementById('answerInput').className = '';
+  document.getElementById('motivationMsg').textContent = randomMsg(MOTIVATIONS_CORRECT);
+
+  initCanvas();
+}
+
+function checkAnswer() {
+  const raw = document.getElementById('answerInput').value.trim().replace(',','.');
+  const lv = LEVELS[currentLevel];
+  const accepted = lv.accept || [lv.answer];
+  const correct = accepted.includes(raw);
+
+  if (correct) {
+    const pts = hintUsed ? 50 : 100 - wrongStreak*10;
+    score += Math.max(pts, 10);
+    gameLog.push({ level: currentLevel+1, q: lv.question, type: lv.type, ok: true });
+    document.getElementById('answerInput').classList.add('correct');
+    showFeedback('✅ CORRETTO!', '#4ade80');
+    document.getElementById('motivationMsg').textContent = randomMsg(MOTIVATIONS_CORRECT);
+    triggerRunAnimation();
+    setTimeout(() => {
+      currentLevel++;
+      loadLevel();
+    }, 1800);
+  } else {
+    wrongStreak++;
+    lives--;
+    document.getElementById('answerInput').classList.add('wrong');
+    setTimeout(() => document.getElementById('answerInput').classList.remove('wrong'), 400);
+    showFeedback('❌ RIPROVA!', '#f87171');
+    document.getElementById('motivationMsg').textContent = randomMsg(MOTIVATIONS_WRONG);
+    updateHearts();
+    if (lives <= 0) {
+      gameLog.push({ level: currentLevel+1, q: lv.question, type: lv.type, ok: false });
+      setTimeout(() => {
+        currentLevel++;
+        lives = 3;
+        if (currentLevel < LEVELS.length) loadLevel();
+        else showResult();
+      }, 1200);
+      return;
+    }
+    if (wrongStreak >= 2 && !hintShown) {
+      document.getElementById('hintBtn').style.display = 'inline-block';
+      document.getElementById('hintCounter').textContent = '💡 Puoi usare l\'aiuto!';
+    }
+  }
+}
+
+function showHint() {
+  const lv = LEVELS[currentLevel];
+  hintUsed = true;
+  hintShown = true;
+  document.getElementById('hintText').textContent = lv.hint;
+  document.getElementById('hintBox').classList.remove('hidden');
+  document.getElementById('hintBtn').disabled = true;
+  document.getElementById('hintCounter').textContent = '';
+  document.getElementById('motivationMsg').textContent = randomMsg(MOTIVATIONS_HINT);
+}
+
+function updateHearts() {
+  const h = document.getElementById('hudHearts');
+  h.textContent = '❤️'.repeat(Math.max(lives,0)) + '🖤'.repeat(Math.max(3-lives,0));
+}
+
+/* ════════════════════════════════════
+   FEEDBACK BUBBLE
+════════════════════════════════════ */
+function showFeedback(text, color) {
+  const ov = document.getElementById('feedbackOverlay');
+  const b = document.createElement('div');
+  b.className = 'feedback-bubble';
+  b.textContent = text;
+  b.style.color = color;
+  ov.appendChild(b);
+  setTimeout(() => b.remove(), 900);
+}
+
+/* ════════════════════════════════════
+   RESULT
+════════════════════════════════════ */
+function showResult() {
+  cancelAnimationFrame(animFrame);
+  const correct = gameLog.filter(g => g.ok).length;
+  const total = gameLog.length;
+  const pct = total ? correct/total : 0;
+
+  let stars = '⭐';
+  let emoji = '😊';
+  let title = 'CE LA FAI!';
+  let msg = '';
+
+  if (pct >= 0.9) { stars='⭐⭐⭐'; emoji='🏆'; title='CAMPIONE!'; msg=`Straordinario ${playerName}! Sei un/una vero/a matematico/a!`; }
+  else if (pct >= 0.7) { stars='⭐⭐'; emoji='🥇'; title='OTTIMO!'; msg=`Bravissimo/a ${playerName}! Ancora un po\' e sei perfetto/a!`; }
+  else if (pct >= 0.5) { stars='⭐'; emoji='💪'; title='BRAVO/A!'; msg=`Buon lavoro ${playerName}! La pratica rende perfetti!`; }
+  else { stars='🌱'; emoji='📚'; title='CONTINUA!'; msg=`Non mollare ${playerName}! La matematica si conquista passo dopo passo!`; }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultStars').textContent = stars;
+  document.getElementById('resultScore').textContent = score + ' PUNTI';
+  document.getElementById('resultMsg').textContent = msg;
+
+  const tbody = document.getElementById('resultTableBody');
+  tbody.innerHTML = '';
+  gameLog.forEach(g => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${g.level}</td><td style="font-size:11px">${g.q.substring(0,40)}…</td><td><span style="background:${g.type==='Lineare'?'#3b82f6':'#8b5cf6'};color:#fff;border-radius:4px;padding:2px 6px;font-size:10px">${g.type}</span></td><td class="${g.ok?'ok':'ko'}">${g.ok?'✔ Giusto':'✘ Sbagliato'}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  show('screenResult');
+}
+
+function restartGame() { show('screenLogin'); }
+
+function shareResult() {
+  const txt = `🎮 MathQuest – ${playerName} (${playerClass}) ha totalizzato ${score} punti! ${document.getElementById('resultStars').textContent}`;
+  if (navigator.share) navigator.share({ title: 'MathQuest', text: txt });
+  else { navigator.clipboard.writeText(txt); alert('Risultato copiato! 📋'); }
+}
+
+/* ════════════════════════════════════
+   UTILITIES
+════════════════════════════════════ */
+function show(id) {
+  ['screenLogin','screenGame','screenResult'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+function randomMsg(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+buildBackground();
+</script>
+</body>
+</html>
