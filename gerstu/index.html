@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GerStu — Connettere generazioni a Bolzano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
+</head>
+<body>
+
+<header id="navbar"></header>
+<main id="main-content"></main>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">🏔️ GerStu</div>
+      <div style="font-size:.85rem">Connettere generazioni a Bolzano.<br>Progetto pilota — A.A. 2025/26 - prof. Ing. Ferrante Luigi</div>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Piattaforma</h4>
+        <p onclick="showView('search-hosts')">Cerca Host</p>
+        <p onclick="showView('search-students')">Cerca Studenti</p>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <p onclick="showView('login',{role:'host'})">Accedi come Host</p>
+        <p onclick="showView('login',{role:'student'})">Accedi come Studente</p>
+      </div>
+      <div class="footer-col">
+        <h4>Contatti</h4>
+        <p>info@gerstu.it</p>
+        <p>Bolzano, Alto Adige</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 GerStu · Progetto dimostrativo · Tutti i diritti riservati</div>
+</footer>
+
+</body>
+</html>
