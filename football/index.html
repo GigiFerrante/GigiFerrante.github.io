@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football AI - Portiere Avanzato</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #1a1a1a; color: white; font-family: sans-serif; overflow: hidden; }
+        #wrap { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        #hud { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #222; height: 60px; border-bottom: 2px solid #444; }
+        .score { font-size: 22px; font-weight: bold; }
+        #canvas-wrap { flex-grow: 1; position: relative; width: 100%; background: #000; }
+        canvas { display: block; width: 100% !important; height: 100% !important; }
+        #status { font-size: 16px; color: #f1c40f; padding: 10px; text-align: center; background: #111; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="wrap">
+    <div id="hud">
+        <div class="score">🔴 <span id="sa">0</span> — <span id="sb">0</span> 🔵</div>
+        <div id="status">Che il match abbia inizio</div>
+    </div>
+    <div id="canvas-wrap"><canvas id="c"></canvas></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+    const canvas = document.getElementById('c');
+    const statusEl = document.getElementById('status');
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x222222);
+
+    const FW = 100, FH = 66;
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 65, 75);
+    camera.lookAt(0, 0, 0);
+
+    function resize(){
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    setTimeout(resize, 100);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    const ballLight = new THREE.PointLight(0xffff00, 1.5, 60);
+    scene.add(ballLight);
+
+    // TERRENO
+    const field = new THREE.Mesh(new THREE.PlaneGeometry(FW, FH), new THREE.MeshLambertMaterial({color: 0x2e7d32}));
+    field.rotation.x = -Math.PI/2;
+    scene.add(field);
+
+    function makeLine(w, h, x, z) {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide}));
+        m.rotation.x = -Math.PI/2; m.position.set(x, 0.06, z); scene.add(m);
+    }
+    makeLine(FW, 0.6, 0, FH/2); makeLine(FW, 0.6, 0, -FH/2);
+    makeLine(0.6, FH, FW/2, 0); makeLine(0.6, FH, -FW/2, 0);
+    makeLine(0.6, FH, 0, 0);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(8.8, 9.2, 32), new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.DoubleSide}));
+    ring.rotation.x = -Math.PI/2; ring.position.y = 0.07; scene.add(ring);
+
+    // PORTE
+    function makeGoal(x, color) {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshLambertMaterial({color: color});
+        const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 9), mat); p1.position.set(0, 4.5, -8);
+        const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 9), mat); p2.position.set(0, 4.5, 8);
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 17), mat); bar.rotation.x = Math.PI/2; bar.position.set(0, 9, 0);
+        
+        const netG = new THREE.PlaneGeometry(16, 9);
+        const netM = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide});
+        const net = new THREE.Mesh(netG, netM);
+        net.rotation.y = Math.PI/2;
+        net.position.set(x > 0 ? 0.5 : -0.5, 4.5, 0);
+
+        g.add(p1, p2, bar, net);
+        g.position.x = x;
+        scene.add(g);
+    }
+    makeGoal(-FW/2, 0xff0000);
+    makeGoal(FW/2, 0x0000ff);
+
+    function createPlayer(col, x, z, id) {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 4, 8), new THREE.MeshLambertMaterial({color: col}));
+        body.position.y = 2; g.add(body); scene.add(g);
+        return { mesh: g, x: x, z: z, homeX: x, homeZ: z, team: col, id: id };
+    }
+
+    const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(1.2), new THREE.MeshLambertMaterial({color: 0xffff00}));
+    scene.add(ballMesh);
+    const ball = { x:0, z:0, vx:0, vz:0, rolling: false };
+
+    const you = createPlayer(0xffa500, -15, 0, 'player');
+    const gk1 = createPlayer(0xeeeeee, -FW/2 + 3.5, 0, 'gk1'); // Avanzato di più dalla linea
+    const gk2 = createPlayer(0x333333, FW/2 - 3.5, 0, 'gk2');  // Avanzato di più dalla linea
+
+    const teamA = [createPlayer(0xff4444, -35, -15, 'a1'), createPlayer(0xff4444, -20, 15, 'a2'), createPlayer(0xff4444, -10, -10, 'a3')];
+    const teamB = [createPlayer(0x4444ff, 35, 15, 'b1'), createPlayer(0x4444ff, 15, -15, 'b2'), createPlayer(0x4444ff, 10, 10, 'b3')];
+    const allBots = [...teamA, ...teamB];
+
+    let scoreA = 0, scoreB = 0, hasBall = false;
+    const keys = {};
+
+    function updatePhysics() {
+        // Repulsione Giocatori
+        const actors = [you, gk1, gk2, ...allBots];
+        for (let i = 0; i < actors.length; i++) {
+            for (let j = i + 1; j < actors.length; j++) {
+                const dx = actors[i].x - actors[j].x, dz = actors[i].z - actors[j].z;
+                const dist = Math.hypot(dx, dz);
+                if (dist < 3.2) {
+                    const angle = Math.atan2(dz, dx), force = (3.2 - dist) * 0.15;
+                    if (actors[i].id !== 'player') { actors[i].x += Math.cos(angle) * force; actors[i].z += Math.sin(angle) * force; }
+                    if (actors[j].id !== 'player') { actors[j].x -= Math.cos(angle) * force; actors[j].z -= Math.sin(angle) * force; }
+                }
+            }
+        }
+
+        // Palla
+        if (hasBall) {
+            ball.x = you.x + 2.2; ball.z = you.z;
+        } else if (ball.rolling) {
+            ball.x += ball.vx; ball.z += ball.vz;
+            ball.vx *= 0.98; ball.vz *= 0.98;
+
+            // 1. PRIMA controlliamo la parata dei portieri
+            [gk1, gk2].forEach(g => {
+                const distPalla = Math.hypot(g.x - ball.x, g.z - ball.z);
+                if (distPalla < 3.2) { 
+                    ball.vx *= -1.3; // Respinge
+                    ball.x += ball.vx * 1.5; // Sposta fuori dal raggio
+                    statusEl.textContent = "PARATA DECISIVA!";
+                }
+            });
+
+            // 2. POI controlliamo i gol e i rimbalzi
+            if (Math.abs(ball.z) > FH/2 - 1.2) { ball.vz *= -0.7; ball.z = Math.sign(ball.z)*(FH/2 - 1.2); }
+            if (Math.abs(ball.x) > FW/2 - 1.2) {
+                if (ball.z > -8 && ball.z < 8) {
+                    if (ball.x > 0) scoreA++; else scoreB++;
+                    ball.x=0; ball.z=0; ball.vx=0; ball.vz=0; ball.rolling=false; hasBall=false;
+                    statusEl.textContent = "GOOOL!";
+                } else {
+                    ball.vx *= -0.7; ball.x = Math.sign(ball.x)*(FW/2 - 1.2);
+                }
+            }
+        }
+
+        // IA Bot
+        allBots.forEach(p => {
+            const d = Math.hypot(p.x - ball.x, p.z - ball.z);
+            if (d < 18) { p.x += (ball.x - p.x) * 0.04; p.z += (ball.z - p.z) * 0.04; }
+            else { p.x += (p.homeX - p.x) * 0.02; p.z += (p.homeZ - p.z) * 0.02; }
+            if(p.team === 0x4444ff && d < 2.5 && !hasBall) { ball.vx = -1.3; ball.vz = (Math.random()-0.5); ball.rolling = true; }
+        });
+
+        // Movimento Portieri (Vincolati a non superare la linea di porta)
+        gk1.z += (ball.z - gk1.z) * 0.06; gk1.z = THREE.MathUtils.clamp(gk1.z, -7.5, 7.5);
+        gk2.z += (ball.z - gk2.z) * 0.06; gk2.z = THREE.MathUtils.clamp(gk2.z, -7.5, 7.5);
+
+        if (!hasBall && Math.hypot(you.x - ball.x, you.z - ball.z) < 3.2) hasBall = true;
+    }
+
+    function loop() {
+        requestAnimationFrame(loop);
+        const spd = keys['Shift'] ? 0.5 : 0.3;
+        if(keys['ArrowUp'] || keys['w']) you.z -= spd;
+        if(keys['ArrowDown'] || keys['s']) you.z += spd;
+        if(keys['ArrowLeft'] || keys['a']) you.x -= spd;
+        if(keys['ArrowRight'] || keys['d']) you.x += spd;
+
+        you.x = THREE.MathUtils.clamp(you.x, -FW/2 + 1.5, FW/2 - 1.5);
+        you.z = THREE.MathUtils.clamp(you.z, -FH/2 + 1.5, FH/2 - 1.5);
+
+        updatePhysics();
+
+        you.mesh.position.set(you.x, 0, you.z);
+        gk1.mesh.position.set(gk1.homeX, 0, gk1.z);
+        gk2.mesh.position.set(gk2.homeX, 0, gk2.z);
+        allBots.forEach(p => p.mesh.position.set(p.x, 0, p.z));
+        ballMesh.position.set(ball.x, 1.2, ball.z);
+        ballLight.position.set(ball.x, 5, ball.z);
+        camera.position.x += (you.x - camera.position.x) * 0.05;
+        renderer.render(scene, camera);
+        document.getElementById('sa').textContent = scoreA; document.getElementById('sb').textContent = scoreB;
+    }
+
+    window.addEventListener('keydown', e => {
+        keys[e.key] = true;
+        if(e.key === ' ' && hasBall) {
+            ball.vx = 2.6; ball.vz = (Math.random()-0.5)*0.4; ball.rolling = true; hasBall = false;
+        }
+    });
+    window.addEventListener('keyup', e => keys[e.key] = false);
+    loop();
+})();
+</script>
+</body>
+</html>
