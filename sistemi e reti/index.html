@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NetBuilder Pro — Progetta reti LAN aziendali</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="screen-splash" class="screen active">
+  <div class="splash-bg"><div class="grid-overlay"></div><div class="pulse-rings"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div></div></div>
+  <div class="splash-content">
+    <div class="logo-wrap"><span class="logo-icon">⬡</span><h1 class="logo-text">NetBuilder<span class="accent">Pro</span></h1></div>
+    <p class="tagline">Progetta reti LAN aziendali con VLAN, sicurezza e subnetting</p>
+    <div class="badges-row"><span class="badge">🏢 3 Scenari</span><span class="badge">⚡ Drag & Drop</span><span class="badge">🔐 VLAN & Subnet</span><span class="badge">📊 Report Tecnico</span></div>
+    <button class="btn-primary" onclick="App.goToLevelSelect()"><span>Inizia la Sfida</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    <p class="hint-text">Per studenti di 4ª superiore — Indirizzo Informatico</p>
+  </div>
+</div>
+
+<!-- SELEZIONE LIVELLO -->
+<div id="screen-levels" class="screen">
+  <div class="top-bar">
+    <button class="btn-back" onclick="App.goToSplash()">← Menu</button>
+    <h2>Scegli lo Scenario</h2>
+    <div class="xp-display"><span id="total-xp">0</span> XP</div>
+  </div>
+  <div class="levels-grid">
+    <div class="level-card" id="card-1" onclick="App.startLevel(1)">
+      <div class="level-badge">LIVELLO 1</div><div class="level-icon">🏢</div><h3>Small Office</h3>
+      <p class="level-desc">~120mq: segreteria, ufficio capo, dipendenti, sala aspetto. ONT in segreteria, AP per ospiti. 2 VLAN.</p>
+      <div class="level-specs"><span>👥 5 postazioni</span><span>🔀 Switch 16p</span><span>🔐 2 VLAN</span></div>
+      <div class="level-difficulty"><span class="diff-dot active"></span><span class="diff-dot"></span><span class="diff-dot"></span><span class="diff-label">Facile</span></div>
+      <div class="level-status" id="status-1"><span class="status-new">NUOVO</span></div>
+    </div>
+    <div class="level-card locked" id="card-2">
+      <div class="level-badge">LIVELLO 2</div><div class="level-icon">🏗️</div><h3>Business Hub</h3>
+      <p class="level-desc">~400mq: server room, direzione, open-space, sala riunioni, sala aspetto. 5 VLAN + telecamere.</p>
+      <div class="level-specs"><span>👥 12+ postazioni</span><span>🔀 Switch 24p</span><span>🔐 5 VLAN</span></div>
+      <div class="level-difficulty"><span class="diff-dot active"></span><span class="diff-dot active"></span><span class="diff-dot"></span><span class="diff-label">Medio</span></div>
+      <div class="level-status" id="status-2"><span class="status-locked">🔒 Completa Livello 1</span></div>
+    </div>
+    <div class="level-card locked" id="card-3">
+      <div class="level-badge">LIVELLO 3</div><div class="level-icon">🏛️</div><h3>Enterprise Floor</h3>
+      <p class="level-desc">~600mq: server farm, IT, direzione, commerciale, locale sicurezza. 6 VLAN, 2 AP, telecamere, NVR.</p>
+      <div class="level-specs"><span>👥 24 postazioni</span><span>🗄️ 2 Rack</span><span>🔐 6 VLAN</span></div>
+      <div class="level-difficulty"><span class="diff-dot active"></span><span class="diff-dot active"></span><span class="diff-dot active"></span><span class="diff-label">Difficile</span></div>
+      <div class="level-status" id="status-3"><span class="status-locked">🔒 Completa Livello 2</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHERMATA GIOCO -->
+<div id="screen-game" class="screen">
+  <div class="game-hud">
+    <div class="hud-left">
+      <button class="btn-icon" onclick="App.goToLevelSelect()">←</button>
+      <div class="level-info"><span class="hud-level" id="hud-level-name">Livello 1</span><span class="hud-scenario" id="hud-scenario-name">Small Office</span></div>
+    </div>
+    <div class="hud-center">
+      <div class="score-pill"><span class="score-label">PUNTEGGIO</span><span class="score-value" id="hud-score">0</span></div>
+      <div class="score-pill"><span class="score-label">XP</span><span class="score-value" id="hud-xp">0</span></div>
+      <div class="score-pill"><span class="score-label">BUDGET</span><span class="score-value" id="hud-budget">€0</span></div>
+    </div>
+    <div class="hud-right">
+      <button class="btn-hint" onclick="App.showHint()">💡 Suggerimento</button>
+      <button class="btn-validate" onclick="App.validateLayout()">✓ Verifica</button>
+    </div>
+  </div>
+
+  <div class="mission-bar">
+    <div class="mission-icon">📋</div>
+    <div class="mission-text" id="mission-text">Posiziona i componenti sulla piantina</div>
+    <div class="mission-progress">
+      <div class="progress-track"><div class="progress-fill" id="mission-progress-fill" style="width:0%"></div></div>
+      <span id="mission-progress-text">0%</span>
+    </div>
+  </div>
+
+  <div class="game-main">
+    <!-- Pannello componenti -->
+    <div class="components-panel">
+      <div class="panel-header"><h3>🧰 Componenti</h3><p class="panel-hint">Trascina sulla piantina</p></div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="comp-search" class="comp-search-input" placeholder="Cerca componente..." oninput="App.searchComponents(this.value)" autocomplete="off" spellcheck="false"/>
+        <button class="search-clear" id="search-clear" onclick="App.clearSearch()">✕</button>
+      </div>
+      <div class="components-filter">
+        <button class="filter-btn active" data-filter="all" onclick="App.filterComponents('all',this)">Tutti</button>
+        <button class="filter-btn" data-filter="network" onclick="App.filterComponents('network',this)">Rete</button>
+        <button class="filter-btn" data-filter="endpoint" onclick="App.filterComponents('endpoint',this)">Endpoint</button>
+        <button class="filter-btn" data-filter="cable" onclick="App.filterComponents('cable',this)">Cavi</button>
+      </div>
+      <div id="search-no-results" class="search-no-results" style="display:none"><span>😕</span><span>Nessun risultato</span></div>
+      <div class="components-list" id="components-list"></div>
+    </div>
+
+    <!-- Piantina -->
+    <div class="floor-wrap">
+      <div class="floor-toolbar">
+        <span class="floor-title" id="floor-title">🏢 Small Office</span>
+        <div class="floor-actions">
+          <button class="btn-sm" onclick="App.clearFloor()">🗑️ Pulisci</button>
+          <button class="btn-sm" onclick="App.undoLast()">↩ Annulla</button>
+        </div>
+      </div>
+      <div class="floor-canvas-wrap">
+        <div class="floor-canvas" id="floor-canvas">
+          <div id="floor-svg-container"></div>
+          <div id="placed-items-layer"></div>
+        </div>
+        <div class="legend-panel" id="legend-panel"></div>
+      </div>
+    </div>
+
+    <!-- Info panel -->
+    <div class="info-panel">
+      <div class="panel-header"><h3>📡 Stato Rete</h3></div>
+      <div class="network-status" id="network-status"></div>
+      <div class="checklist-wrap">
+        <h4>✅ Obiettivi</h4>
+        <div class="checklist" id="checklist"></div>
+      </div>
+      <div class="tip-box">
+        <div class="tip-icon">🧑‍🏫</div>
+        <div class="tip-text" id="tip-text">Benvenuto! Inizia posizionando l'<strong>ONT</strong> nel locale tecnico.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANNELLO VLAN + SUBNET -->
+  <div class="vlan-panel" id="vlan-panel">
+    <div class="vlan-panel-header" onclick="App.toggleVlanPanel()">
+      <span class="vlan-panel-icon">🔐</span>
+      <div class="vlan-panel-title">
+        <h3>Configurazione VLAN e Subnetting</h3>
+        <p>Definisci le sottoreti — il calcolatore mostra automaticamente tutti i parametri IP (rete, primo host, ultimo host, broadcast, mask, bit)</p>
+      </div>
+      <button class="vlan-toggle-btn" id="vlan-toggle-btn">▲</button>
+    </div>
+    <div class="vlan-panel-body" id="vlan-panel-body"></div>
+  </div>
+</div>
+
+<!-- MODALI -->
+<div class="modal-overlay" id="modal-hint" style="display:none">
+  <div class="modal-box hint-modal">
+    <div class="modal-header"><span class="modal-icon">💡</span><h3 id="hint-title">Suggerimento</h3></div>
+    <div class="modal-body" id="hint-body"></div>
+    <button class="btn-primary" onclick="App.closeModal('modal-hint')">Ho capito!</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-result" style="display:none">
+  <div class="modal-box result-modal">
+    <div class="result-header" id="result-header">
+      <div class="result-stars" id="result-stars"></div>
+      <h2 id="result-title">Risultato</h2>
+      <p id="result-subtitle"></p>
+    </div>
+    <div class="result-details" id="result-details"></div>
+    <div class="result-xp-gain" id="result-xp-gain"></div>
+    <div class="result-actions">
+      <button class="btn-secondary" onclick="App.closeModal('modal-result')">Continua</button>
+      <button class="btn-primary" id="btn-report" onclick="App.showReport()" style="display:none">📄 Genera Report</button>
+      <button class="btn-primary" id="btn-next-level" onclick="App.nextLevel()" style="display:none">Prossimo Livello →</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div id="screen-report" class="screen">
+  <div class="report-container">
+    <div class="report-header">
+      <div class="report-logo"><span>⬡</span> NetBuilder<span class="accent">Pro</span></div>
+      <div class="report-meta"><span id="report-date"></span><span id="report-student"></span></div>
+    </div>
+    <div class="report-body" id="report-body"></div>
+    <div class="report-actions">
+      <button class="btn-secondary" onclick="App.closeReport()">← Torna al Gioco</button>
+      <button class="btn-primary" onclick="App.printReport()">🖨️ Stampa / PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<div class="xp-popup" id="xp-popup" style="display:none">+<span id="xp-amount">0</span> XP</div>
+
+<script src="game.js"></script>
+<script>
+// Toggle pannello VLAN
+App.toggleVlanPanel = function() {
+  const body = document.getElementById('vlan-panel-body');
+  const btn  = document.getElementById('vlan-toggle-btn');
+  const panel= document.getElementById('vlan-panel');
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  btn.textContent = collapsed ? '▲' : '▼';
+  panel.classList.toggle('collapsed', !collapsed);
+};
+</script>
+</body>
+</html>
