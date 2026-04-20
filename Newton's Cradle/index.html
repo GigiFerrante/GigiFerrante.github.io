@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton's Cradle</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a1a;
+            overflow: hidden;
+        }
+
+        /* The Frame */
+        .cradle {
+            display: flex;
+            border-top: 15px solid #444;
+            border-radius: 5px;
+            padding: 0 20px;
+        }
+
+        /* The Strings */
+        .ball-container {
+            position: relative;
+            width: 60px;
+            height: 300px;
+            transform-origin: top;
+        }
+
+        /* The Balls */
+        .ball {
+            position: absolute;
+            bottom: 0;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #eee, #333);
+            border-radius: 50%;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5);
+        }
+
+        /* String line */
+        .ball-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 240px;
+            background: #666;
+            transform: translateX(-50%);
+        }
+
+        /* Animations */
+        @keyframes swing-left {
+            0% { transform: rotate(0deg); animation-timing-function: ease-out; }
+            25% { transform: rotate(45deg); animation-timing-function: ease-in; }
+            50% { transform: rotate(0deg); animation-timing-function: linear; }
+            100% { transform: rotate(0deg); }
+        }
+
+        @keyframes swing-right {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(0deg); animation-timing-function: ease-out; }
+            75% { transform: rotate(-45deg); animation-timing-function: ease-in; }
+            100% { transform: rotate(0deg); }
+        }
+
+        .left {
+            animation: swing-left 1.2s infinite;
+        }
+
+        .right {
+            animation: swing-right 1.2s infinite;
+        }
+
+        /* Shadow on floor */
+        .shadow-container {
+            position: absolute;
+            bottom: -80px;
+            display: flex;
+            gap: 0;
+        }
+
+        .shadow {
+            width: 60px;
+            height: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cradle">
+        <div class="ball-container left"><div class="ball"></div></div>
+        <div class="ball-container"><div class="ball"></div></div>
+        <div class="ball-container"><div class="ball"></div></div>
+        <div class="ball-container"><div class="ball"></div></div>
+        <div class="ball-container right"><div class="ball"></div></div>
+        
+        <div class="shadow-container">
+            <div class="shadow"></div>
+            <div class="shadow"></div>
+            <div class="shadow"></div>
+            <div class="shadow"></div>
+            <div class="shadow"></div>
+        </div>
+    </div>
+
+</body>
+</html>
