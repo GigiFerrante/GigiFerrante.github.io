@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Legge della Gravitazione Universale</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #1e293b;
+            --text-color: #e2e8f0;
+            --accent-color: #38bdf8;
+            --force-color: #f43f5e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        .formula-box {
+            text-align: center;
+            font-size: 1.4rem;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid var(--accent-color);
+            margin: 15px 0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #334155;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button.active {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .simulation-area {
+            position: relative;
+            height: 300px;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Corpi Celesti */
+        .body-celestial {
+            position: absolute;
+            border-radius: 50%;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        #terra {
+            background: radial-gradient(circle at 30% 30%, #3b82f6, #1d4ed8);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            left: 25%;
+            z-index: 2;
+        }
+
+        #oggetto {
+            right: 25%;
+            z-index: 2;
+        }
+
+        /* Classi dinamiche per l'oggetto */
+        .mela {
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, #ef4444, #b91c1c);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+            border-radius: 50% !important;
+        }
+
+        .luna {
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle at 30% 30%, #94a3b8, #475569);
+            box-shadow: 0 0 15px rgba(148, 163, 184, 0.4);
+        }
+
+        /* Vettori Forza */
+        .vector {
+            position: absolute;
+            height: 4px;
+            background-color: var(--force-color);
+            top: 50%;
+            transform: translateY(-50%);
+            transition: width 0.5s ease;
+            pointer-events: none;
+        }
+
+        .vector::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            border: 6px solid transparent;
+        }
+
+        #force-terra {
+            left: calc(25% + var(--terra-radius, 40px));
+            background-color: var(--force-color);
+        }
+        #force-terra::after {
+            right: -6px;
+            border-left-color: var(--force-color);
+        }
+
+        #force-oggetto {
+            right: calc(25% + var(--oggetto-radius, 10px));
+            background-color: var(--force-color);
+        }
+        #force-oggetto::after {
+            left: -6px;
+            border-right-color: var(--force-color);
+        }
+
+        .data-display {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 0.95rem;
+        }
+
+        .data-display span {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .info-text {
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>La Gravità di Isaac Newton</h1>
+        <p>Esplora come la massa dei corpi influenza la forza di attrazione gravitazionale.</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h3>La Legge dell'Attrazione Universale</h3>
+            <p class="info-text">
+                Formulata da Sir Isaac Newton nel 1687, afferma che due corpi nell'universo si attraggono con una forza direttamente proporzionale al prodotto delle loro masse e inversamente proporzionale al quadrato della loro distanza.
+            </p>
+            <div class="formula-box">
+                F = G &middot; (m<sub>1</sub> &middot; m<sub>2</sub>) / d<sup>2</sup>
+            </div>
+            <p class="info-text" style="font-size: 0.85rem; color: #94a3b8;">
+                Nel simulatore qui sotto la distanza <strong>d</strong> rimane fissa per isolare visivamente l'effetto della variazione della massa della "Mela" rispetto alla "Luna". Nota come la forza sia <strong>identica ed opposta</strong> su entrambi i corpi (Terzo Principio della Dinamica).
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="controls">
+                <button id="btn-mela" class="active" onclick="switchScenario('mela')">Scenario: Terra - Mela</button>
+                <button id="btn-luna" onclick="switchScenario('luna')">Scenario: Terra - Luna</button>
+            </div>
+
+            <div class="simulation-area">
+                <div id="terra" class="body-celestial" style="width: 80px; height: 80px;">Terra</div>
+                <div id="force-terra" class="vector" style="width: 20px;"></div>
+                <div id="force-oggetto" class="vector" style="width: 20px;"></div>
+                <div id="oggetto" class="body-celestial mela"></div>
+            </div>
+
+            <div class="data-display">
+                <div>Massa Terra (m<sub>1</sub>): <span>5.97 &times; 10<sup>24</sup> kg</span></div>
+                <div>Massa Oggetto (m<sub>2</sub>): <span id="massa-oggetto">0.2 kg (Mela)</span></div>
+                <div>Distanza (d): <span id="distanza-testo">6.371 km (Raggio Terra)</span></div>
+                <div>Forza di Attrazione (F): <span id="forza-valore" style="color: #f43f5e;">1.96 N</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dati fisici reali per l'interazione
+        const dati = {
+            mela: {
+                massa: "0.2 kg (Mela)",
+                distanza: "~6.371 km (Superficie)",
+                forza: "1.96 N",
+                classe: "mela",
+                terraRadius: "40px", // metà del width per il calcolo del vettore
+                oggettoRadius: "10px",
+                forzaPixel: 15 // Lunghezza grafica del vettore in px
+            },
+            luna: {
+                massa: "7.34 &times; 10<sup>22</sup> kg (Luna)",
+                distanza: "~384.400 km (Orbita)",
+                forza: "1.98 &times; 10<sup>20</sup> N",
+                classe: "luna",
+                terraRadius: "40px",
+                oggettoRadius: "22.5px",
+                forzaPixel: 120 
+            }
+        };
+
+        function switchScenario(tipo) {
+            // Gestione pulsanti attivi
+            document.getElementById('btn-mela').classList.remove('active');
+            document.getElementById('btn-luna').classList.remove('active');
+            document.getElementById(`btn-${tipo}`).classList.add('active');
+
+            const oggetto = document.getElementById('oggetto');
+            const fTerra = document.getElementById('force-terra');
+            const fOggetto = document.getElementById('force-oggetto');
+
+            // Cambio classe dell'oggetto con animazione fluida CSS
+            oggetto.className = `body-celestial ${dati[tipo].classe}`;
+            oggetto.innerHTML = tipo === 'luna' ? 'Luna' : '';
+
+            // Aggiornamento dei testi scientifici
+            document.getElementById('massa-oggetto').innerHTML = dati[tipo].massa;
+            document.getElementById('distanza-testo').innerHTML = dati[tipo].distanza;
+            document.getElementById('forza-valore').innerHTML = dati[tipo].forza;
+
+            // Aggiornamento grafico dei vettori forza (la lunghezza simula l'intensità)
+            fTerra.style.setProperty('--terra-radius', dati[tipo].terraRadius);
+            fOggetto.style.setProperty('--oggetto-radius', dati[tipo].oggettoRadius);
+            
+            fTerra.style.width = `${dati[tipo].forzaPixel}px`;
+            fOggetto.style.width = `${dati[tipo].forzaPixel}px`;
+        }
+
+        // Inizializzazione vettori alla partenza
+        switchScenario('mela');
+    </script>
+</body>
+</html>
