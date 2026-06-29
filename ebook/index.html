@@ -37,7 +37,8 @@
         </div>
 
         <div id="bookGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            </div>
+            <!-- I libri verranno inseriti qui -->
+        </div>
 
         <div id="emptyState" class="hidden text-center py-20">
             <p class="text-slate-400">Nessun libro caricato. Comincia aggiungendo il tuo primo PDF!</p>
@@ -107,12 +108,24 @@
             }
 
             library.forEach((book, index) => {
+                // Imposta la lingua predefinita se non esiste nei vecchi salvataggi
+                if (!book.lang) book.lang = 'it-IT';
+
                 const progress = book.totalSentences > 0 ? Math.round((book.resumeIndex / book.totalSentences) * 100) : 0;
+                
                 const card = `
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all group">
-                        <div class="flex justify-between items-start mb-4">
+                        <div class="flex justify-between items-center mb-4">
                             <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase">${book.category}</span>
-                            <button onclick="deleteBook(${index})" class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition">&times; Rimuovi</button>
+                            
+                            <!-- NUOVO SELETTORE LINGUA -->
+                            <select onchange="updateLanguage(${index}, this.value)" class="text-xs bg-slate-100 border-none rounded-lg px-2 py-1 text-slate-600 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                                <option value="it-IT" ${book.lang === 'it-IT' ? 'selected' : ''}>🇮🇹 ITA</option>
+                                <option value="en-US" ${book.lang === 'en-US' ? 'selected' : ''}>🇬🇧 ENG</option>
+                                <option value="de-DE" ${book.lang === 'de-DE' ? 'selected' : ''}>🇩🇪 DEU</option>
+                            </select>
+
+                            <button onclick="deleteBook(${index})" class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition text-sm">&times; Rimuovi</button>
                         </div>
                         <h3 class="font-bold text-lg mb-2 text-slate-800 leading-tight h-14 overflow-hidden">${book.title}</h3>
                         
@@ -156,7 +169,6 @@
                     fullText += content.items.map(item => item.str).join(" ") + " ";
                 }
 
-                // Split semplice per frasi
                 const cleanSentences = fullText.split(/[.!?]+/).filter(s => s.trim().length > 3);
 
                 const newBook = {
@@ -166,6 +178,7 @@
                     totalSentences: cleanSentences.length,
                     resumeIndex: 0,
                     category: 'Generale',
+                    lang: 'it-IT', // Lingua di default al caricamento
                     review: ''
                 };
 
@@ -215,10 +228,15 @@
                 return;
             }
 
+            // Recupera il libro corrente per prenderne la lingua impostata
+            const activeBook = library[currentBookId];
+
             currentUtterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
             currentUtterance.rate = document.getElementById('speed').value;
             currentUtterance.pitch = document.getElementById('pitch').value;
-            currentUtterance.lang = 'it-IT';
+            
+            // MODIFICATO: Usa la lingua del libro specifico (es. 'it-IT', 'en-US', 'de-DE')
+            currentUtterance.lang = activeBook.lang || 'it-IT'; 
 
             currentUtterance.onend = () => {
                 currentSentenceIndex++;
@@ -247,6 +265,17 @@
             localStorage.setItem('voiceShelf_db', JSON.stringify(library));
         }
 
+        // NUOVA FUNZIONE: Aggiorna la lingua del libro e interrompe la riproduzione se quel libro è attivo, così riparte con la voce corretta
+        function updateLanguage(index, langValue) {
+            library[index].lang = langValue;
+            saveData();
+            
+            if (currentBookId === index && isPlaying) {
+                stopSpeech();
+                startSpeech();
+            }
+        }
+
         function deleteBook(index) {
             if(confirm('Eliminare questo libro?')) {
                 library.splice(index, 1);
@@ -268,8 +297,6 @@
 
         function renderCategories() {
             const container = document.getElementById('categoryFilters');
-            const cats = ['all', ...new Set(library.map(b => b.category))];
-            // Implementazione filtro veloce volendo espandere
         }
 
         // Init al caricamento
