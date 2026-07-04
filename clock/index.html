@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orologio Vivente V2</title>
+    <title>Orologio Vivente - Inspired Design</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,15 +17,18 @@
             background-color: #121212;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
+            color: #ffffff;
         }
         #canvasContainer {
             position: relative;
-            width: 100vmin;
-            height: 100vmin;
+            width: 80vmin;
+            height: 80vmin;
             max-width: 100%;
             max-height: 100%;
+            margin-top: 20px;
         }
         canvas {
             position: absolute;
@@ -47,6 +50,27 @@
             /* Filtro traslucido pesante: forte sfocatura e ridotta opacità per nasconderlo dietro il vetro */
             filter: blur(14px) contrast(1.2) opacity(0.45);
         }
+        /* Box di testo per i dettagli sul progetto in inglese */
+        .info-box {
+            z-index: 10;
+            max-width: 600px;
+            text-align: center;
+            padding: 20px;
+            margin-top: 25px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #aaaaaa;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        .info-box strong {
+            color: #00b4d8;
+            font-size: 15px;
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -58,6 +82,12 @@
         <canvas id="handsCanvas"></canvas>
         <!-- Strato 3: Il quadrante dell'orologio e il riflesso del vetro esterno -->
         <canvas id="glassCanvas"></canvas>
+    </div>
+
+    <!-- Box informativo inserito in basso -->
+    <div class="info-box">
+        <strong>The Living Clock Project</strong>
+        This project is inspired by the artistic clock concept at Grand Central Terminal, where a real man was filmed continuously for 12 hours to record the video loop, physically painting and erasing the clock hands minute by minute to keep the time perfectly accurate.
     </div>
 
     <script>
@@ -95,7 +125,8 @@
         };
 
         function resize() {
-            const size = Math.min(window.innerWidth, window.innerHeight);
+            const container = document.getElementById('canvasContainer');
+            const size = Math.min(container.clientWidth, container.clientHeight);
             width = size;
             height = size;
             radius = size * 0.45;
@@ -161,9 +192,9 @@
             ctxMan.save();
             
             // Animazione oscillatoria per i movimenti delle braccia e del corpo
-            man.limbAngle = Math.sin(Date.now() * 0.007) * 0.25;
+            man.limbAngle = Math.sin(Date.now() * 0.004) * 0.25;
             
-            // Proporzioni giganti: l'altezza complessiva occupa circa i 3/4 dell'orologio (radius * 1.5)
+            // Proporzioni giganti: l'altezza complessiva occupa circa i 3/4 dell'orologio (radius * 1.3)
             const scale = radius * 1.3; 
 
             // Corpo/Busto (Tuta azzurra)
@@ -341,7 +372,7 @@
                 renderHandsStatic();
 
             } else if (man.state === 'moving_to_erase') {
-                man.progress += 0.03; // Raggiungimento rapido del braccio
+                man.progress += 0.008; // Rallentato l'allungamento del braccio
                 if (man.progress >= 1) {
                     man.progress = 1;
                     man.state = 'erasing';
@@ -350,13 +381,12 @@
                 man.x = baseManX;
                 man.y = baseManY;
                 
-                // Il corpo fa solo un leggero piegamento naturale di sbilanciamento verso l'obiettivo
                 let leanX = (man.targetX - baseManX) * 0.08;
                 drawMan(man.x + leanX, man.y, 0, 'idle');
                 renderHandsStatic();
 
             } else if (man.state === 'erasing') {
-                man.progress += 0.025; 
+                man.progress += 0.005; // Rallentato il tempo impiegato per cancellare
                 if (man.progress >= 1) {
                     currentHands.isErased = true;
                     man.state = 'moving_to_paint';
@@ -374,7 +404,7 @@
                 renderHandsStatic();
 
             } else if (man.state === 'moving_to_paint') {
-                man.progress += 0.03;
+                man.progress += 0.008; // Rallentata la transizione verso la nuova posizione
                 if (man.progress >= 1) {
                     man.progress = 1;
                     man.state = 'painting';
@@ -386,7 +416,7 @@
                 renderHandsStatic();
 
             } else if (man.state === 'painting') {
-                man.progress += 0.02; 
+                man.progress += 0.004; // Rallentato il disegno graduale della nuova linea
                 if (man.progress >= 1) {
                     man.progress = 1;
                     man.state = 'idle';
@@ -406,7 +436,8 @@
         }
 
         window.addEventListener('resize', resize);
-        resize();
+        // Ritardo minimo per permettere al CSS Flexbox di stabilizzare i contenitori
+        setTimeout(resize, 50);
         loop();
     </script>
 </body>
